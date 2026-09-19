@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "net.kronig"
-version = "1.2.0"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -24,6 +24,8 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.processResources {
+    // Re-run when the version changes, otherwise plugin.yml keeps the old one.
+    inputs.property("version", project.version)
     filteringCharset = "UTF-8"
     filesMatching("plugin.yml") {
         expand("version" to project.version)

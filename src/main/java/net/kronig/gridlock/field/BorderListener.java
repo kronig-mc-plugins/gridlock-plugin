@@ -4,10 +4,13 @@ import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kronig.gridlock.GridLockPlugin;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.util.Text;
+import org.bukkit.Axis;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Orientable;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -22,7 +25,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
-import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -194,6 +196,12 @@ public final class BorderListener implements Listener {
                 }
             }
         }
+        if (cause == TeleportCause.NETHER_PORTAL) {
+            long front = portalFront(location);
+            if (front != Long.MIN_VALUE) {
+                columns.add(front);
+            }
+        }
         boolean firstInWorld = fields.size(world) == 0;
         for (long column : columns) {
             fields.unlock(world, FieldManager.unpackX(column), FieldManager.unpackZ(column));
@@ -202,6 +210,31 @@ public final class BorderListener implements Listener {
         Bukkit.broadcast(Text.prefixed((firstInWorld ? "<light_purple>Neue Dimension!</light_purple> " : "")
                 + "<gray>Portal-Feld im <white>" + dimension + "</white> bei <white>" + location.getBlockX() + ", "
                 + location.getBlockZ() + "</white> freigeschaltet <dark_gray>(" + columns.size() + " Blöcke)"));
+    }
+
+    /**
+     * One column right in front of the portal, so the player can step out and walk back in without levels.
+     * Prefers the side with solid ground; falls back to the side the player is facing.
+     */
+    private static long portalFront(Location location) {
+        Block feet = location.getBlock();
+        Block portal = feet.getType() == Material.NETHER_PORTAL ? feet : feet.getRelative(0, 1, 0);
+        if (portal.getType() != Material.NETHER_PORTAL || !(portal.getBlockData() instanceof Orientable orientable)) {
+            return Long.MIN_VALUE;
+        }
+        // Portal along X → step out along Z, and vice versa.
+        boolean alongX = orientable.getAxis() == Axis.X;
+        int[][] sides = alongX ? new int[][]{{0, 1}, {0, -1}} : new int[][]{{1, 0}, {-1, 0}};
+        for (int[] side : sides) {
+            Block candidate = feet.getRelative(side[0], 0, side[1]);
+            if (FieldManager.isSafe(candidate)) {
+                return FieldManager.pack(candidate.getX(), candidate.getZ());
+            }
+        }
+        double yaw = Math.toRadians(location.getYaw());
+        double facing = alongX ? Math.cos(yaw) : -Math.sin(yaw);
+        int[] side = facing >= 0 ? sides[0] : sides[1];
+        return FieldManager.pack(feet.getX() + side[0], feet.getZ() + side[1]);
     }
 
     // ------------------------------------------------------------------ vehicles & mobs
@@ -217,11 +250,17 @@ public final class BorderListener implements Listener {
         if (!carriesRestrictedPlayer(vehicle) || !fields.isAllowed(from) || fields.isAllowed(to)) {
             return;
         }
-        vehicle.setVelocity(new Vector());
-        Location back = from.clone();
-        back.setYaw(to.getYaw());
-        back.setPitch(to.getPitch());
-        vehicle.teleport(back);
+        // The vehicle keeps going, its restricted riders are dropped off inside the field.
+        for (Entity passenger : vehicle.getPassengers()) {
+            if (passenger instanceof Player player && fields.isRestricted(player)) {
+                vehicle.removePassenger(player);
+                Location dropOff = FieldManager.safeSpot(from.getWorld(), from.getBlockX(), from.getBlockZ(), from.getY());
+                dropOff.setYaw(player.getYaw());
+                dropOff.setPitch(player.getPitch());
+                Bukkit.getScheduler().runTask(plugin, () -> player.teleport(dropOff));
+                player.sendMessage(Text.prefixed("<gray>Endstation Border – dein Fahrzeug fährt ohne dich weiter."));
+            }
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -232,12 +271,6 @@ public final class BorderListener implements Listener {
             return;
         }
         Entity entity = event.getEntity();
-        if (carriesRestrictedPlayer(entity)) {
-            if (fields.isAllowed(from) && !fields.isAllowed(to)) {
-                event.setCancelled(true);
-            }
-            return;
-        }
         if (entity instanceof Enemy
                 && !plugin.settings().bool(Settings.MOBS_CAN_ENTER)
                 && plugin.data().state.isIngame()

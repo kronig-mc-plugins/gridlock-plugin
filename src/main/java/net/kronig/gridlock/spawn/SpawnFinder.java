@@ -53,6 +53,11 @@ public final class SpawnFinder {
         }
         ThreadLocalRandom random = ThreadLocalRandom.current();
         Location target = new Location(world, random.nextInt(-radius, radius + 1), 64, random.nextInt(-radius, radius + 1));
+        if (preset == SpawnPreset.WORLDSPAWN) {
+            // The world spawn itself; if it is not safe, the fallback below finds land right next to it.
+            attempt(world, preset, radius, MAX_ATTEMPTS, result);
+            return;
+        }
         if (!preset.biomes().isEmpty()) {
             BiomeSearchResult found = world.locateNearestBiome(target, BIOME_SEARCH_RADIUS,
                     preset.biomes().toArray(new org.bukkit.block.Biome[0]));

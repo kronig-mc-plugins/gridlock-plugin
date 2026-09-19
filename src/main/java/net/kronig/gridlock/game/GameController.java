@@ -124,9 +124,14 @@ public final class GameController implements Listener {
             return;
         }
         List<SpawnPreset> leaders = leaders();
-        SpawnPreset preset = leaders.get(ThreadLocalRandom.current().nextInt(leaders.size()));
+        SpawnPreset voted = leaders.get(ThreadLocalRandom.current().nextInt(leaders.size()));
         if (leaders.size() > 1) {
-            Bukkit.broadcast(Text.prefixed("<gray>Gleichstand! Der Zufall entscheidet: <white>" + preset.displayName()));
+            Bukkit.broadcast(Text.prefixed("<gray>Gleichstand! Der Zufall entscheidet: <white>" + voted.displayName()));
+        }
+        SpawnPreset preset = voted.resolve(ThreadLocalRandom.current());
+        if (voted == SpawnPreset.RANDOM) {
+            Bukkit.broadcast(Text.prefixed("<light_purple>Zufall</light_purple> <gray>hat ausgelost: <white>"
+                    + preset.displayName() + "</white> " + preset.difficulty().format()));
         }
         data().state = GameState.STARTING;
         data().preset = preset.name();
@@ -258,7 +263,7 @@ public final class GameController implements Listener {
                 player.setGameMode(GameMode.SPECTATOR);
             }
         }
-        plugin.levels().updateBar();
+        plugin.levels().sync();
     }
 
     @EventHandler
@@ -339,7 +344,9 @@ public final class GameController implements Listener {
             sender.sendMessage(Text.prefixed("<red>Reset-Markierung konnte nicht geschrieben werden: " + e.getMessage()));
             return;
         }
-        plugin.replaceData(new GameData());
+        GameData fresh = new GameData();
+        fresh.hiddenSidebar.addAll(data().hiddenSidebar);
+        plugin.replaceData(fresh);
         Bukkit.broadcast(Text.prefixed("<red>Neue Runde!</red> <gray>Die Welt wird gelöscht, der Server startet neu…"));
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {

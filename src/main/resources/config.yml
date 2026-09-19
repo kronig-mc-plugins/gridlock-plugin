@@ -19,12 +19,12 @@ expand:
   milestone-announcements: true
 
 levels:
-  # PLAYER = wer erweitert, zahlt mit eigenen Leveln | POOL = gemeinsamer Team-Pool
+  # PLAYER   = jeder zahlt mit eigenen Leveln
+  # POOL     = Team-Pool: alle teilen sich eine XP-Leiste (wird bei allen unten angezeigt)
+  # TRANSFER = eigene Level, aber man kann anderen Level überweisen (/gl pay)
   payment-mode: PLAYER
   # Normale XP (Erze, Mobs, Öfen ...) zählt
   vanilla-xp: true
-  # POOL-Modus: so viel Prozent der aufgesammelten XP fließt in den Pool
-  pool-share-percent: 100
   # Automatische Level für Spielzeit
   time-levels: true
   time-interval-minutes: 5

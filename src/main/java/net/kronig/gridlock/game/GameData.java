@@ -19,6 +19,8 @@ public final class GameData {
     public Map<String, Long> playtime = new HashMap<>();
     public Set<String> initializedPlayers = new HashSet<>();
     public Map<String, String> votes = new HashMap<>();
+    /** Players who switched their own scoreboard off. */
+    public Set<String> hiddenSidebar = new HashSet<>();
 
     public int poolLevels;
     public int poolPoints;

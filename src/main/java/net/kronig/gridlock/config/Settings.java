@@ -30,13 +30,10 @@ public final class Settings {
 
     // Level
     public static final Setting PAYMENT_MODE = register(Setting.choice("levels.payment-mode", Category.LEVELS, Material.GOLD_INGOT,
-            "Bezahlmodus", "Spieler zahlt: die eigenen Level werden abgezogen. Team-Pool: alle zahlen in gemeinsame Team-Level ein (Bossbar).",
+            "Bezahlmodus", "Jeder für sich: eigene Level. Team-Pool: alle teilen sich eine XP-Leiste. Überweisen: eigene Level, die man anderen schicken kann (/gl pay).",
             PaymentMode.PLAYER));
     public static final Setting VANILLA_XP = register(Setting.bool("levels.vanilla-xp", Category.LEVELS, Material.DIAMOND_ORE,
             "Vanilla-XP", "Normale XP aus Erzen, Mobs, Öfen usw. zählt.", true));
-    public static final Setting POOL_SHARE = register(Setting.integer("levels.pool-share-percent", Category.LEVELS, Material.HOPPER,
-            "Pool-Anteil", "Im Team-Pool-Modus: wie viel Prozent der aufgesammelten XP in den Pool fließen. Der Rest bleibt beim Spieler (z. B. zum Verzaubern).",
-            100, 0, 100, "%"));
     public static final Setting TIME_LEVELS = register(Setting.bool("levels.time-levels", Category.LEVELS, Material.SUNFLOWER,
             "Zeit-Level", "Es gibt automatisch Level für Spielzeit.", true));
     public static final Setting TIME_INTERVAL = register(Setting.integer("levels.time-interval-minutes", Category.LEVELS, Material.CLOCK,

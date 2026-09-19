@@ -3,9 +3,11 @@ package net.kronig.gridlock.util;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ public final class ItemBuilder {
     private final List<Component> lore = new ArrayList<>();
     private Component name;
     private boolean glow;
+    private OfflinePlayer skullOwner;
     private NamespacedKey tagKey;
     private String tagValue;
 
@@ -61,6 +64,12 @@ public final class ItemBuilder {
         return this;
     }
 
+    /** Player head texture (only for PLAYER_HEAD). */
+    public ItemBuilder skull(OfflinePlayer owner) {
+        this.skullOwner = owner;
+        return this;
+    }
+
     public ItemBuilder tag(NamespacedKey key, String value) {
         this.tagKey = key;
         this.tagValue = value;
@@ -80,6 +89,9 @@ public final class ItemBuilder {
             meta.setEnchantmentGlintOverride(true);
         }
         meta.addItemFlags(ItemFlag.values());
+        if (skullOwner != null && meta instanceof SkullMeta skullMeta) {
+            skullMeta.setOwningPlayer(skullOwner);
+        }
         if (tagKey != null) {
             meta.getPersistentDataContainer().set(tagKey, PersistentDataType.STRING, tagValue);
         }

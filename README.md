@@ -8,13 +8,14 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
 ## Ablauf
 
 1. **Lobby**: Beim Joinen landet man in einer leeren Void-Welt auf einer Plattform.
-   - Kompass → **Spawn-Abstimmung** (Zufall, Neben Baum, Dschungel, Wüste, Pilzinsel … mit Schwierigkeit ★☆☆☆ bis ★★★★)
+   - Kompass → **Spawn-Abstimmung** (Normaler Worldspawn, Neben Baum, Dschungel, Wüste, Pilzinsel … mit Schwierigkeit ★☆☆☆ bis ★★★★; „Zufall“ lost einen davon aus)
    - Comparator → **Menü & Einstellungen**
    - Grüner Farbstoff (nur Admins) → **Challenge starten**
 2. **Start**: Der Spawn mit den meisten Stimmen wird gesucht (Gleichstand = Zufall, keine Stimmen = Zufall), danach 5-Sekunden-Countdown und alle werden auf das 1x1 teleportiert.
 3. **Spielen**: Die Border ist eine durchgehende rote Linie am Boden und fühlt sich an wie eine Wand, man läuft einfach dagegen.
    Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, Linie wird orange → gelb → grün) → Block frei, Level weg.
-   Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht.
+   Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht. Die Border gilt für alle außer Zuschauer (auch im Kreativmodus).
+   Fahrzeuge (Minecart, Boot, Pferd) fahren an der Border ohne dich weiter, du bleibst im Feld.
 4. **Ende**: Enderdrache tot → gewonnen (Timer stoppt). Im Hardcore-Modus: einer stirbt → verloren.
 5. **Neue Runde**: `/gl reset` löscht Oberwelt/Nether/End und fährt den Server herunter. Beim nächsten Start gibt es eine frische Welt und es geht zurück in die Lobby.
 
@@ -23,7 +24,7 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
 | Dimension | Regel |
 |---|---|
 | Oberwelt | Startet mit dem 1x1 am Spawn |
-| Nether | Eigenes Feld. Beim Durchgehen eines Portals werden Ankunftsblock + Portal automatisch freigeschaltet |
+| Nether | Eigenes Feld. Beim Durchgehen eines Portals werden Ankunftsblock, Portal und ein Block davor automatisch freigeschaltet |
 | End | **Keine Border** auf der Drachen-Insel (Radius einstellbar, Standard 200). Im äußeren End gilt wieder die Border; End-Gateways schalten den Ankunftsblock frei |
 
 Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
@@ -37,9 +38,14 @@ Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
 | `/gl config [key] [wert]` | alle (ändern: Admin) | Einstellungen per Befehl, mit Tab-Vervollständigung |
 | `/gl spawn`, `/gl vote [spawn]` | alle | Spawn-Abstimmung |
 | `/gl info` | alle | Feldgrößen, Kosten, Timer |
-| `/gl pool einzahlen [n]` | alle | Eigene Level in den Team-Pool |
-| `/timer` · `/timer pause\|resume\|reset` | alle · Admin | Timer anzeigen / steuern |
-| `/gl start` · `/gl reset` · `/gl reload` · `/gl unlock` | Admin | Runde starten, neue Runde, Config neu laden, Block unter dir freischalten |
+| `/gl pay [spieler] [level]` | alle | Level überweisen (Modus „Überweisen“, ohne Argumente: Menü) |
+| `/gl scoreboard` | alle | Eigenes Scoreboard an/aus |
+| `/timer` | alle | Timer anzeigen |
+| `/timer pause\|resume\|reset` · `/timer set\|add\|remove [zeit]` | Admin | Timer steuern (Zeit z. B. `1:30:00`, `45m`, `2h`) |
+| `/gl level [spieler\|pool\|alle] [set\|add\|remove] [n]` | Admin | Level anpassen |
+| `/gl playtime [spieler] [set\|add\|remove] [zeit]` | Admin | Spielzeit anpassen |
+| `/gl unlock\|lock [radius]` | Admin | Feld-Blöcke um dich freischalten/sperren |
+| `/gl start` · `/gl reset` · `/gl reload` | Admin | Runde starten, neue Runde, Config neu laden |
 
 Aliase: `/gridlock`, `/gl`, `/grid`. Permission: `gridlock.admin` (Standard: OP).
 
@@ -48,7 +54,7 @@ Aliase: `/gridlock`, `/gl`, `/grid`. Permission: `gridlock.admin` (Standard: OP)
 Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLock/config.yml` gespeichert.
 
 - **Erweitern**: Haltezeit, Grundkosten, Kostenaufschlag (+X Level alle N Blöcke), Meilenstein-Nachrichten
-- **Level**: Bezahlmodus (Spieler zahlt / Team-Pool mit Bossbar), Vanilla-XP an/aus, Pool-Anteil in %, Zeit-Level (alle X Minuten Y Level), Start-Level
+- **Level**: Bezahlmodus (Jeder für sich / Team-Pool mit geteilter XP-Leiste / Jeder für sich + Überweisen), Vanilla-XP an/aus, Zeit-Level (alle X Minuten Y Level), Start-Level
 - **Timer**: Actionbar, Scoreboard, läuft ohne Spieler
 - **Dimensionen**: Kosten-Multiplikator Nether/End, Radius der freien Drachen-Insel
 - **Tod**: Normal / Hardcore

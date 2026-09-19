@@ -2,7 +2,6 @@ package net.kronig.gridlock.ui;
 
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kronig.gridlock.GridLockPlugin;
-import net.kronig.gridlock.config.PaymentMode;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.game.GameData;
@@ -40,7 +39,7 @@ public final class SidebarManager {
     public void update() {
         boolean enabled = plugin.settings().bool(Settings.TIMER_SIDEBAR);
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!enabled) {
+            if (!enabled || plugin.data().hiddenSidebar.contains(player.getUniqueId().toString())) {
                 remove(player);
                 continue;
             }
@@ -109,11 +108,6 @@ public final class SidebarManager {
                 lines.add("<gray>Welt: <white>" + ExpansionManager.dimensionName(world));
                 lines.add("<gray>Feld: <white>" + plugin.fields().size(world) + " <gray>Blöcke");
                 lines.add("<gray>Nächster: <green>" + plugin.fields().nextCost(world) + " Level");
-            }
-            if (plugin.levels().mode() == PaymentMode.POOL) {
-                lines.add("<gray>Team-Level: <green><bold>" + data.poolLevels);
-            } else {
-                lines.add("<gray>Deine Level: <green><bold>" + player.getLevel());
             }
             lines.add("");
             lines.add("<gray>Spielzeit:");

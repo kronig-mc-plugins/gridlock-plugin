@@ -18,7 +18,7 @@ import java.util.UUID;
 
 public final class SpawnMenu extends Gui {
 
-    private static final int[] PRESET_SLOTS = {10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24};
+    private static final int[] PRESET_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
 
     public SpawnMenu(GridLockPlugin plugin, Player viewer) {
         super(plugin, viewer, 5, "<dark_gray>» <aqua><bold>Spawn wählen</bold></aqua>");

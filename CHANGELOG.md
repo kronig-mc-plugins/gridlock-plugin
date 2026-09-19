@@ -2,6 +2,34 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.3.0] – 2026-09-19
+
+### Hinzugefügt
+- **Drei Bezahlmodi**:
+  - *Jeder für sich*: eigene Level (wie bisher)
+  - *Team-Pool*: alle teilen sich eine XP-Leiste, die unten bei jedem Spieler dieselben Team-Level zeigt. Verzaubern, Amboss und Erweitern ziehen vom Team ab. Beim Tod geht der Pool nicht verloren.
+  - *Jeder für sich + Überweisen*: eigene Level, die man anderen per `/gl pay [spieler] [level]` oder über ein Menü mit Spielerköpfen schicken kann (Links 1, Rechts 5, Shift 10)
+- **Admin-Befehle für alle Werte**:
+  - `/gl level [spieler|pool|alle] [set|add|remove] [n]`
+  - `/gl playtime [spieler] [set|add|remove] [zeit]`
+  - `/timer set|add|remove [zeit]` (Zeit z. B. `1:30:00`, `45m`, `2h`)
+  - `/gl unlock|lock [radius]` zum Freischalten und Sperren von Feld-Blöcken
+- **Scoreboard pro Spieler ein-/ausblendbar** im Menü oder per `/gl scoreboard`
+- **Neuer Spawn „Normaler Worldspawn“**: Start am Spawnpunkt, den Minecraft selbst gesetzt hat
+- **Nether-Portal**: Bei der Ankunft wird zusätzlich ein Block vor dem Portal freigeschaltet, damit man ohne Level wieder zurückkommt
+
+### Geändert
+- **„Zufall“** lost jetzt einen der anderen Spawns aus (vom Baum bis zur Pilzinsel) und sagt an, welcher es geworden ist.
+- **Border gilt auch im Kreativmodus**, nur Zuschauer sind ausgenommen.
+- **Fahrzeuge an der Border**: Minecart, Boot und Pferd fahren weiter, der Spieler wird an der Kante abgesetzt und bleibt im Feld.
+- Team-Level stehen nicht mehr in Bossbar und Scoreboard, sondern in der XP-Leiste.
+
+### Entfernt
+- `/gl pool einzahlen` und die Einstellung „Pool-Anteil“ (im Team-Pool-Modus fließt jetzt alle XP in den Pool).
+
+### Behoben
+- Die Versionsnummer in der `plugin.yml` wurde beim Bauen nicht aktualisiert (der Server zeigte 1.2.0 statt der echten Version).
+
 ## [1.2.0] – 2026-09-19
 
 ### Hinzugefügt

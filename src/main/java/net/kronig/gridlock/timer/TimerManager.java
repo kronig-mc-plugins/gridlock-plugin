@@ -102,6 +102,18 @@ public final class TimerManager {
                 + "</white> zurückgesetzt."));
     }
 
+    /** Admin: set/add/remove seconds on the challenge timer. */
+    public void adjust(String operation, long seconds, CommandSender sender) {
+        GameData data = plugin.data();
+        data.timerSeconds = switch (operation) {
+            case "add" -> data.timerSeconds + seconds;
+            case "remove" -> Math.max(0, data.timerSeconds - seconds);
+            default -> seconds;
+        };
+        Bukkit.broadcast(Text.prefixed("<gray>Timer von <white>" + Text.escape(sender.getName())
+                + "</white> auf <gold>" + Text.time(data.timerSeconds) + "</gold> gesetzt."));
+    }
+
     public long playtime(Player player) {
         return plugin.data().playtime.getOrDefault(player.getUniqueId().toString(), 0L);
     }

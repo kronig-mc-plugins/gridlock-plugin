@@ -34,16 +34,28 @@ public final class TimerCommand implements BasicCommand {
             case "pause", "stop" -> plugin.timer().setPaused(true, sender);
             case "resume", "start", "weiter" -> plugin.timer().setPaused(false, sender);
             case "reset" -> plugin.timer().reset(sender);
-            default -> sender.sendMessage(Text.prefixed("<gray>/timer pause | resume | reset"));
+            case "set", "add", "remove" -> {
+                long seconds = args.length >= 2 ? Text.parseDuration(args[1]) : -1;
+                if (seconds < 0) {
+                    sender.sendMessage(Text.prefixed("<red>Zeit z. B. 1:30:00, 45m, 2h oder 3600."));
+                    return;
+                }
+                plugin.timer().adjust(args[0].toLowerCase(Locale.ROOT), seconds, sender);
+            }
+            default -> sender.sendMessage(Text.prefixed("<gray>/timer pause | resume | reset | set | add | remove [zeit]"));
         }
     }
 
     @Override
     public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        if (args.length > 1 || !source.getSender().hasPermission(GridLockPlugin.ADMIN_PERMISSION)) {
+        if (!source.getSender().hasPermission(GridLockPlugin.ADMIN_PERMISSION) || args.length > 2) {
             return List.of();
         }
+        if (args.length == 2) {
+            return List.of("set", "add", "remove").contains(args[0].toLowerCase(Locale.ROOT))
+                    ? List.of("1:00:00", "30m", "10m") : List.of();
+        }
         String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        return List.of("pause", "resume", "reset").stream().filter(s -> s.startsWith(prefix)).toList();
+        return List.of("pause", "resume", "reset", "set", "add", "remove").stream().filter(s -> s.startsWith(prefix)).toList();
     }
 }

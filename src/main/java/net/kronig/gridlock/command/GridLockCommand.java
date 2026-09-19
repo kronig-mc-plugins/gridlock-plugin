@@ -12,9 +12,11 @@ import net.kronig.gridlock.game.GameState;
 import net.kronig.gridlock.gui.CategoryMenu;
 import net.kronig.gridlock.gui.MainMenu;
 import net.kronig.gridlock.gui.SpawnMenu;
+import net.kronig.gridlock.gui.TransferMenu;
 import net.kronig.gridlock.spawn.SpawnPreset;
 import net.kronig.gridlock.util.Text;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -29,8 +31,11 @@ import java.util.stream.Stream;
 public final class GridLockCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "menu", "settings", "config", "spawn", "vote", "info", "pool", "start", "reset", "reload", "unlock", "help");
-    private static final List<String> ADMIN_SUBCOMMANDS = List.of("start", "reset", "reload", "unlock");
+            "menu", "settings", "config", "spawn", "vote", "info", "pay", "scoreboard", "help",
+            "start", "reset", "reload", "level", "playtime", "unlock", "lock");
+    private static final List<String> ADMIN_SUBCOMMANDS = List.of(
+            "start", "reset", "reload", "level", "playtime", "unlock", "lock");
+    private static final int MAX_FIELD_RADIUS = 25;
 
     private final GridLockPlugin plugin;
 
@@ -53,7 +58,10 @@ public final class GridLockCommand implements BasicCommand {
             case "spawn" -> ifPlayer(sender, player -> new SpawnMenu(plugin, player).open());
             case "vote" -> vote(sender, args);
             case "info" -> info(sender);
-            case "pool" -> pool(sender, args);
+            case "pay", "überweisen", "ueberweisen" -> pay(sender, args);
+            case "scoreboard", "sb" -> ifPlayer(sender, this::toggleScoreboard);
+            case "level" -> level(sender, args);
+            case "playtime", "spielzeit" -> playtime(sender, args);
             case "start" -> plugin.game().start(sender);
             case "reset" -> reset(sender, args);
             case "reload" -> {
@@ -62,11 +70,8 @@ public final class GridLockCommand implements BasicCommand {
                 plugin.onSettingsChanged();
                 sender.sendMessage(Text.prefixed("<green>config.yml und Server-Icon neu geladen."));
             }
-            case "unlock" -> ifPlayer(sender, player -> {
-                boolean added = plugin.fields().unlock(player.getWorld(),
-                        player.getLocation().getBlockX(), player.getLocation().getBlockZ());
-                player.sendMessage(Text.prefixed(added ? "<green>Block freigeschaltet." : "<gray>Der Block ist schon frei."));
-            });
+            case "unlock" -> ifPlayer(sender, player -> changeField(player, args, true));
+            case "lock" -> ifPlayer(sender, player -> changeField(player, args, false));
             default -> help(sender);
         }
     }
@@ -164,31 +169,152 @@ public final class GridLockCommand implements BasicCommand {
         }
     }
 
-    private void pool(CommandSender sender, String[] args) {
+    // ------------------------------------------------------------------ player commands
+
+    private void pay(CommandSender sender, String[] args) {
         ifPlayer(sender, player -> {
-            if (plugin.levels().mode() != PaymentMode.POOL) {
-                player.sendMessage(Text.prefixed("<gray>Der Team-Pool ist aus (Bezahlmodus: Spieler zahlt)."));
+            if (plugin.levels().mode() != PaymentMode.TRANSFER) {
+                player.sendMessage(Text.prefixed("<gray>Überweisen ist nur im Bezahlmodus <white>"
+                        + PaymentMode.TRANSFER.displayName() + "</white> möglich."));
                 return;
             }
-            if (args.length < 3 || !args[1].equalsIgnoreCase("einzahlen")) {
-                player.sendMessage(Text.prefixed("<gray>Team-Pool: <green>" + plugin.data().poolLevels
-                        + " Level</green>. Einzahlen: <white>/gl pool einzahlen [level]"));
+            if (args.length < 3) {
+                new TransferMenu(plugin, player).open();
                 return;
             }
-            int amount;
-            try {
-                amount = Integer.parseInt(args[2]);
-            } catch (NumberFormatException e) {
-                player.sendMessage(Text.prefixed("<red>Das ist keine Zahl."));
+            Player target = Bukkit.getPlayerExact(args[1]);
+            if (target == null || target.equals(player)) {
+                player.sendMessage(Text.prefixed("<red>Spieler nicht gefunden (oder du selbst)."));
                 return;
             }
-            if (plugin.levels().deposit(player, amount)) {
-                Bukkit.broadcast(Text.prefixed("<white>" + Text.escape(player.getName()) + "</white> <gray>hat <green>"
-                        + amount + " Level</green> in den Team-Pool eingezahlt."));
-            } else {
-                player.sendMessage(Text.prefixed("<red>Du hast nicht genug Level."));
+            int amount = parseInt(args[2]);
+            if (amount <= 0) {
+                player.sendMessage(Text.prefixed("<red>Gib eine positive Zahl an."));
+                return;
+            }
+            if (!plugin.levels().transfer(player, target, amount)) {
+                player.sendMessage(Text.prefixed("<red>Du hast nur " + player.getLevel() + " Level."));
             }
         });
+    }
+
+    private void toggleScoreboard(Player player) {
+        String id = player.getUniqueId().toString();
+        boolean hidden = !plugin.data().hiddenSidebar.remove(id);
+        if (hidden) {
+            plugin.data().hiddenSidebar.add(id);
+        }
+        plugin.sidebar().update();
+        player.sendMessage(Text.prefixed("<gray>Dein Scoreboard ist jetzt " + (hidden ? "<red>aus" : "<green>an") + "<gray>."));
+    }
+
+    // ------------------------------------------------------------------ admin commands
+
+    /** /gl level [spieler|pool|alle] [set|add|remove] [n] */
+    private void level(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Text.prefixed("<gray>/gl level [spieler|pool|alle] [set|add|remove] [anzahl]"));
+            return;
+        }
+        String operation = args[2].toLowerCase(Locale.ROOT);
+        int amount = parseInt(args[3]);
+        if (amount < 0 || !List.of("set", "add", "remove").contains(operation)) {
+            sender.sendMessage(Text.prefixed("<red>Aktion: set, add oder remove – und eine Zahl ab 0."));
+            return;
+        }
+        String target = args[1].toLowerCase(Locale.ROOT);
+        boolean pool = plugin.levels().mode() == PaymentMode.POOL;
+        if (target.equals("pool") || pool) {
+            int value = apply(plugin.levels().pool(), operation, amount);
+            plugin.levels().setPool(value);
+            sender.sendMessage(Text.prefixed("<gray>Team-Pool → <green>" + value + " Level"
+                    + (pool && !target.equals("pool") ? " <dark_gray>(Team-Pool-Modus: gilt für alle)" : "")));
+            return;
+        }
+        List<Player> targets = new ArrayList<>();
+        if (target.equals("alle") || target.equals("all") || target.equals("@a")) {
+            targets.addAll(Bukkit.getOnlinePlayers());
+        } else {
+            Player player = Bukkit.getPlayerExact(args[1]);
+            if (player == null) {
+                sender.sendMessage(Text.prefixed("<red>Spieler nicht online: <white>" + Text.escape(args[1])));
+                return;
+            }
+            targets.add(player);
+        }
+        for (Player player : targets) {
+            player.setLevel(apply(player.getLevel(), operation, amount));
+        }
+        sender.sendMessage(Text.prefixed("<gray>Level angepasst für <white>" + targets.size() + " Spieler<gray> ("
+                + operation + " " + amount + ")."));
+    }
+
+    /** /gl playtime [spieler] [set|add|remove] [zeit] */
+    private void playtime(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Text.prefixed("<gray>/gl playtime [spieler] [set|add|remove] [zeit, z. B. 1:30:00 oder 90m]"));
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(args[1]);
+        if (target == null) {
+            sender.sendMessage(Text.prefixed("<red>Spieler unbekannt: <white>" + Text.escape(args[1])));
+            return;
+        }
+        String operation = args[2].toLowerCase(Locale.ROOT);
+        long seconds = Text.parseDuration(args[3]);
+        if (seconds < 0 || !List.of("set", "add", "remove").contains(operation)) {
+            sender.sendMessage(Text.prefixed("<red>Aktion: set, add oder remove – Zeit z. B. 1:30:00, 45m oder 3600."));
+            return;
+        }
+        String id = target.getUniqueId().toString();
+        long current = plugin.data().playtime.getOrDefault(id, 0L);
+        long value = switch (operation) {
+            case "add" -> current + seconds;
+            case "remove" -> Math.max(0, current - seconds);
+            default -> seconds;
+        };
+        plugin.data().playtime.put(id, value);
+        sender.sendMessage(Text.prefixed("<gray>Spielzeit von <white>" + Text.escape(String.valueOf(target.getName()))
+                + "</white> → <gold>" + Text.time(value)));
+    }
+
+    /** /gl unlock|lock [radius] – square around the admin's position. */
+    private void changeField(Player player, String[] args, boolean unlock) {
+        int radius = args.length >= 2 ? parseInt(args[1]) : 0;
+        if (radius < 0 || radius > MAX_FIELD_RADIUS) {
+            player.sendMessage(Text.prefixed("<red>Radius 0 bis " + MAX_FIELD_RADIUS + "."));
+            return;
+        }
+        int bx = player.getLocation().getBlockX();
+        int bz = player.getLocation().getBlockZ();
+        int changed = 0;
+        for (int x = bx - radius; x <= bx + radius; x++) {
+            for (int z = bz - radius; z <= bz + radius; z++) {
+                boolean done = unlock ? plugin.fields().unlock(player.getWorld(), x, z)
+                        : plugin.fields().lock(player.getWorld(), x, z);
+                if (done) {
+                    changed++;
+                }
+            }
+        }
+        player.sendMessage(Text.prefixed("<gray>" + changed + " Blöcke " + (unlock ? "<green>freigeschaltet" : "<red>gesperrt")
+                + "<gray>. Feld jetzt: <white>" + plugin.fields().size(player.getWorld()) + " Blöcke"));
+    }
+
+    private static int apply(int current, String operation, int amount) {
+        return switch (operation) {
+            case "add" -> current + amount;
+            case "remove" -> Math.max(0, current - amount);
+            default -> amount;
+        };
+    }
+
+    private static int parseInt(String raw) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private void reset(CommandSender sender, String[] args) {
@@ -212,10 +338,16 @@ public final class GridLockCommand implements BasicCommand {
         sender.sendMessage(Text.mm("<gray>/gl config [key] [wert] <dark_gray>– Einstellung lesen/ändern"));
         sender.sendMessage(Text.mm("<gray>/gl spawn | vote [spawn] <dark_gray>– Spawn-Abstimmung"));
         sender.sendMessage(Text.mm("<gray>/gl info <dark_gray>– Feld & Timer"));
-        sender.sendMessage(Text.mm("<gray>/gl pool einzahlen [n] <dark_gray>– Level in den Team-Pool"));
-        sender.sendMessage(Text.mm("<gray>/timer pause | resume | reset"));
+        sender.sendMessage(Text.mm("<gray>/gl pay [spieler] [level] <dark_gray>– Level überweisen (Modus Überweisen)"));
+        sender.sendMessage(Text.mm("<gray>/gl scoreboard <dark_gray>– eigenes Scoreboard an/aus"));
+        sender.sendMessage(Text.mm("<gray>/timer <dark_gray>– Zeit anzeigen"));
         if (isAdmin(sender)) {
-            sender.sendMessage(Text.mm("<gray>/gl start | reset | reload | unlock <dark_gray>– Admin"));
+            sender.sendMessage(Text.mm("<gold>Admin:"));
+            sender.sendMessage(Text.mm("<gray>/gl start | reset | reload"));
+            sender.sendMessage(Text.mm("<gray>/gl level [spieler|pool|alle] [set|add|remove] [n]"));
+            sender.sendMessage(Text.mm("<gray>/gl playtime [spieler] [set|add|remove] [zeit]"));
+            sender.sendMessage(Text.mm("<gray>/gl unlock | lock [radius] <dark_gray>– Feld unter dir"));
+            sender.sendMessage(Text.mm("<gray>/timer pause | resume | reset | set | add | remove [zeit]"));
         }
     }
 
@@ -234,10 +366,20 @@ public final class GridLockCommand implements BasicCommand {
                 case "settings", "einstellungen" -> filter(Arrays.stream(Category.values())
                         .map(c -> c.name().toLowerCase(Locale.ROOT)), current);
                 case "vote" -> filter(Arrays.stream(SpawnPreset.values()).map(p -> p.name().toLowerCase(Locale.ROOT)), current);
-                case "pool" -> filter(Stream.of("einzahlen"), current);
+                case "pay", "level" -> filter(Stream.concat(
+                        sub.equals("level") ? Stream.of("pool", "alle") : Stream.empty(),
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName)), current);
+                case "playtime", "spielzeit" -> filter(Bukkit.getOnlinePlayers().stream().map(Player::getName), current);
+                case "unlock", "lock" -> filter(Stream.of("0", "1", "2", "5"), current);
                 case "reset" -> filter(Stream.of("confirm"), current);
                 default -> List.of();
             };
+        }
+        if (args.length == 3 && (sub.equals("level") || sub.equals("playtime") || sub.equals("spielzeit"))) {
+            return filter(Stream.of("set", "add", "remove"), current);
+        }
+        if (args.length == 3 && sub.equals("pay")) {
+            return filter(Stream.of("1", "5", "10"), current);
         }
         if (args.length == 3 && sub.equals("config")) {
             Setting setting = Settings.all().get(args[1].toLowerCase(Locale.ROOT));

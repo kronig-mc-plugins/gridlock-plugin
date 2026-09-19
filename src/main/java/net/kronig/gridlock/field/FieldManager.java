@@ -54,7 +54,7 @@ public final class FieldManager {
         fields.forEach((world, columns) -> gameData.fields.put(world, new ArrayList<>(columns)));
     }
 
-    /** Called after every newly unlocked column. */
+    /** Called whenever a column is unlocked or locked again. */
     public void onUnlock(Consumer<World> listener) {
         this.unlockListener = listener;
     }
@@ -68,11 +68,10 @@ public final class FieldManager {
         return lobbyWorld == null || !lobbyWorld.equals(world);
     }
 
-    /** True if this world's border is enforced for the player right now. */
+    /** True if this world's border is enforced for the player right now (everyone except spectators). */
     public boolean isRestricted(Player player) {
-        GameMode mode = player.getGameMode();
         return data.get().state.isIngame()
-                && (mode == GameMode.SURVIVAL || mode == GameMode.ADVENTURE)
+                && player.getGameMode() != GameMode.SPECTATOR
                 && isChallengeWorld(player.getWorld());
     }
 
@@ -109,6 +108,16 @@ public final class FieldManager {
             unlockListener.accept(world);
         }
         return added;
+    }
+
+    /** @return true if the column was unlocked before */
+    public boolean lock(World world, int x, int z) {
+        Set<Long> columns = fields.get(world.getName());
+        boolean removed = columns != null && columns.remove(pack(x, z));
+        if (removed) {
+            unlockListener.accept(world);
+        }
+        return removed;
     }
 
     public int size(World world) {

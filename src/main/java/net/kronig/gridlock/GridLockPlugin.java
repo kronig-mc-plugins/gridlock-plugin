@@ -82,7 +82,7 @@ public final class GridLockPlugin extends JavaPlugin {
 
         fields = new FieldManager(settings, this::data, lobby::world);
         fields.loadFrom(data);
-        levels = new LevelManager(settings, this::data);
+        levels = new LevelManager(settings, this::data, player -> fields.isChallengeWorld(player.getWorld()));
         actionBars = new ActionBars();
         expansion = new ExpansionManager(settings, fields, levels, actionBars);
         borderRenderer = new BorderRenderer(settings, fields, expansion, this::data);
@@ -121,8 +121,8 @@ public final class GridLockPlugin extends JavaPlugin {
         scheduler.runTaskTimer(this, () -> {
             timer.tickSecond();
             sidebar.update();
-            levels.updateBar();
         }, 20L, 20L);
+        scheduler.runTaskTimer(this, levels::sync, 5L, 5L);
         scheduler.runTaskTimer(this, this::saveData, 20L * 60, 20L * 60);
 
         // Players that were online during /reload.
@@ -165,7 +165,7 @@ public final class GridLockPlugin extends JavaPlugin {
 
     /** Re-applies anything that depends on settings. */
     public void onSettingsChanged() {
-        levels.updateBar();
+        levels.sync();
         sidebar.update();
         borderLines.update();
         solidBorder.refreshAll();
@@ -177,6 +177,11 @@ public final class GridLockPlugin extends JavaPlugin {
         solidBorder.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
+        levels.forget(player);
+    }
+
+    public SidebarManager sidebar() {
+        return sidebar;
     }
 
     public MotdManager motd() {

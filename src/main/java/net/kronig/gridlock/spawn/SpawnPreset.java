@@ -7,7 +7,11 @@ import java.util.List;
 
 public enum SpawnPreset {
     RANDOM("Zufall", Material.ENDER_EYE, Difficulty.UNKNOWN,
-            "Irgendwo an Land. Kann ein Wald sein – oder eine Wüste. Lass dich überraschen.", List.of(), false),
+            "Einer der anderen Spawns wird zufällig ausgelost – vom Baum bis zur Pilzinsel. Lass dich überraschen.",
+            List.of(), false),
+    WORLDSPAWN("Normaler Worldspawn", Material.GRASS_BLOCK, Difficulty.MEDIUM,
+            "Genau da, wo Minecraft selbst den Spawn der Welt gesetzt hat. Wie in einer normalen neuen Welt.",
+            List.of(), false),
     TREE("Neben einem Baum", Material.OAK_SAPLING, Difficulty.EASY,
             "Du startest direkt neben einem Baum. Holz ist sofort da, der perfekte Einstieg.",
             List.of(Biome.FOREST, Biome.BIRCH_FOREST, Biome.FLOWER_FOREST, Biome.PLAINS, Biome.DARK_FOREST), true),
@@ -104,6 +108,15 @@ public enum SpawnPreset {
 
     public boolean nextToTree() {
         return nextToTree;
+    }
+
+    /** RANDOM resolves to one of the concrete presets; everything else stays as it is. */
+    public SpawnPreset resolve(java.util.Random random) {
+        if (this != RANDOM) {
+            return this;
+        }
+        SpawnPreset[] values = values();
+        return values[1 + random.nextInt(values.length - 1)];
     }
 
     public static SpawnPreset parse(String name) {

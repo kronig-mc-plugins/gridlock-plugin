@@ -49,6 +49,43 @@ public final class Text {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
+    /**
+     * Parses a duration: "1:30:00", "45:00", "90m", "2h", "1h30m", "300s" or plain seconds.
+     *
+     * @return seconds, or -1 if the input is not a duration
+     */
+    public static long parseDuration(String input) {
+        String in = input.trim().toLowerCase(java.util.Locale.ROOT);
+        try {
+            if (in.contains(":")) {
+                long total = 0;
+                for (String part : in.split(":")) {
+                    total = total * 60 + Long.parseLong(part);
+                }
+                return total;
+            }
+            if (in.matches("\\d+")) {
+                return Long.parseLong(in);
+            }
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d+)([dhms])").matcher(in);
+            long total = 0;
+            int consumed = 0;
+            while (matcher.find()) {
+                long value = Long.parseLong(matcher.group(1));
+                total += switch (matcher.group(2)) {
+                    case "d" -> value * 86400;
+                    case "h" -> value * 3600;
+                    case "m" -> value * 60;
+                    default -> value;
+                };
+                consumed += matcher.group().length();
+            }
+            return consumed == in.length() && consumed > 0 ? total : -1;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     /** Word-wraps plain text into lines of roughly {@code width} characters. */
     public static List<String> wrap(String text, int width) {
         List<String> lines = new ArrayList<>();
