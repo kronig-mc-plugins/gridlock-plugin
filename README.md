@@ -12,7 +12,8 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
    - Comparator → **Menü & Einstellungen**
    - Grüner Farbstoff (nur Admins) → **Challenge starten**
 2. **Start**: Der Spawn mit den meisten Stimmen wird gesucht (Gleichstand = Zufall, keine Stimmen = Zufall), danach 5-Sekunden-Countdown und alle werden auf das 1x1 teleportiert.
-3. **Spielen**: Schleichen + gegen die rote Border laufen, ca. 1 Sekunde halten (Fortschrittsbalken, Border färbt sich grün) → Block frei, Level weg.
+3. **Spielen**: Die Border ist eine durchgehende rote Linie am Boden und fühlt sich an wie eine Wand, man läuft einfach dagegen.
+   Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, Linie wird orange → gelb → grün) → Block frei, Level weg.
    Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht.
 4. **Ende**: Enderdrache tot → gewonnen (Timer stoppt). Im Hardcore-Modus: einer stirbt → verloren.
 5. **Neue Runde**: `/gl reset` löscht Oberwelt/Nether/End und fährt den Server herunter. Beim nächsten Start gibt es eine frische Welt und es geht zurück in die Lobby.
@@ -51,7 +52,7 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 - **Timer**: Actionbar, Scoreboard, läuft ohne Spieler
 - **Dimensionen**: Kosten-Multiplikator Nether/End, Radius der freien Drachen-Insel
 - **Tod**: Normal / Hardcore
-- **Border**: Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
+- **Border**: Darstellung (Linie am Boden / Partikel-Wand / beides), feste Wand an/aus, Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
 - **Spawn**: Suchradius
 - **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
 

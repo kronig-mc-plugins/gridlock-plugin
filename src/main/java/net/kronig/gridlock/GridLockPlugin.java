@@ -3,10 +3,12 @@ package net.kronig.gridlock;
 import net.kronig.gridlock.command.GridLockCommand;
 import net.kronig.gridlock.command.TimerCommand;
 import net.kronig.gridlock.config.Settings;
+import net.kronig.gridlock.field.BorderLines;
 import net.kronig.gridlock.field.BorderListener;
 import net.kronig.gridlock.field.BorderRenderer;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.field.FieldManager;
+import net.kronig.gridlock.field.SolidBorder;
 import net.kronig.gridlock.game.DataStore;
 import net.kronig.gridlock.game.GameController;
 import net.kronig.gridlock.game.GameData;
@@ -42,6 +44,8 @@ public final class GridLockPlugin extends JavaPlugin {
     private ExpansionManager expansion;
     private BorderRenderer borderRenderer;
     private BorderListener borderListener;
+    private BorderLines borderLines;
+    private SolidBorder solidBorder;
     private GameController game;
     private TimerManager timer;
     private SidebarManager sidebar;
@@ -83,6 +87,12 @@ public final class GridLockPlugin extends JavaPlugin {
         expansion = new ExpansionManager(settings, fields, levels, actionBars);
         borderRenderer = new BorderRenderer(settings, fields, expansion, this::data);
         borderListener = new BorderListener(this, fields, expansion);
+        borderLines = new BorderLines(settings, fields, expansion, this::data);
+        solidBorder = new SolidBorder(this, fields);
+        fields.onUnlock(world -> {
+            solidBorder.refreshWorld(world);
+            borderLines.update();
+        });
         game = new GameController(this);
         timer = new TimerManager(this);
         sidebar = new SidebarManager(this);
@@ -93,6 +103,7 @@ public final class GridLockPlugin extends JavaPlugin {
         pm.registerEvents(lobby, this);
         pm.registerEvents(levels, this);
         pm.registerEvents(borderListener, this);
+        pm.registerEvents(solidBorder, this);
         pm.registerEvents(game, this);
         pm.registerEvents(motd, this);
 
@@ -103,6 +114,9 @@ public final class GridLockPlugin extends JavaPlugin {
         var scheduler = Bukkit.getScheduler();
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
         scheduler.runTaskTimer(this, borderRenderer::render, 4L, 4L);
+        scheduler.runTaskTimer(this, borderLines::update, 10L, 10L);
+        scheduler.runTaskTimer(this, borderLines::updatePushes, 2L, 2L);
+        scheduler.runTaskTimer(this, solidBorder::refreshAll, 20L, 20L);
         scheduler.runTaskTimer(this, borderListener::safetyNet, 10L, 10L);
         scheduler.runTaskTimer(this, () -> {
             timer.tickSecond();
@@ -122,6 +136,12 @@ public final class GridLockPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (borderLines != null) {
+            borderLines.clear();
+        }
+        if (solidBorder != null) {
+            solidBorder.clearAll();
+        }
         if (data != null && dataStore != null) {
             saveData();
         }
@@ -147,11 +167,14 @@ public final class GridLockPlugin extends JavaPlugin {
     public void onSettingsChanged() {
         levels.updateBar();
         sidebar.update();
+        borderLines.update();
+        solidBorder.refreshAll();
     }
 
     public void forget(Player player) {
         expansion.forget(player);
         borderListener.forget(player);
+        solidBorder.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
     }

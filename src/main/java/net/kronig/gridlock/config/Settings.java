@@ -68,12 +68,18 @@ public final class Settings {
             "Tod-Modus", "Normal: im Feld respawnen. Hardcore: stirbt einer, ist die Runde für alle vorbei.", DeathMode.NORMAL));
 
     // Border
+    public static final Setting BORDER_STYLE = register(Setting.choice("border.style", Category.BORDER, Material.PAINTING,
+            "Darstellung", "Linie am Boden: durchgehende, leuchtende Linie auf dem Boden. Partikel-Wand: rote Partikel an den Kanten.",
+            BorderStyle.LINE));
+    public static final Setting BORDER_SOLID = register(Setting.bool("border.solid", Category.BORDER, Material.BARRIER,
+            "Feste Wand", "Man läuft wie gegen eine unsichtbare Wand, ohne zurückteleportiert zu werden (unsichtbare Barrieren nur für den Spieler).",
+            true));
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
-            "Farbe", "Farbe der Border-Partikel.", BorderColor.RED));
+            "Farbe", "Farbe der Border (Linie und Partikel).", BorderColor.RED));
     public static final Setting BORDER_VIEW = register(Setting.integer("border.view-distance", Category.BORDER, Material.SPYGLASS,
             "Sichtweite", "Bis zu welcher Entfernung die Border gezeichnet wird.", 16, 4, 48, "Blöcke"));
     public static final Setting BORDER_DENSITY = register(Setting.integer("border.density", Category.BORDER, Material.REDSTONE,
-            "Dichte", "Wie dicht die Partikelwand ist (höher = besser sichtbar, mehr Leistung).", 2, 1, 4, ""));
+            "Partikel-Dichte", "Wie dicht die Partikelwand ist (nur bei Darstellung Partikel/Beides).", 2, 1, 4, ""));
     public static final Setting MOBS_CAN_ENTER = register(Setting.bool("border.mobs-can-enter", Category.BORDER, Material.ZOMBIE_HEAD,
             "Monster dürfen rein", "Ob Monster von außen ins Feld laufen dürfen.", true));
 

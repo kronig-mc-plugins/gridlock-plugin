@@ -93,7 +93,17 @@ public final class Setting {
                         yield choices.get(i);
                     }
                 }
-                yield null;
+                // German display name prefix, e.g. "linie" for "Linie am Boden" – only if unambiguous.
+                String match = null;
+                for (int i = 0; i < choiceNames.size(); i++) {
+                    if (!in.isEmpty() && choiceNames.get(i).toLowerCase(Locale.ROOT).startsWith(in.toLowerCase(Locale.ROOT))) {
+                        if (match != null) {
+                            yield null;
+                        }
+                        match = choices.get(i);
+                    }
+                }
+                yield match;
             }
         };
     }

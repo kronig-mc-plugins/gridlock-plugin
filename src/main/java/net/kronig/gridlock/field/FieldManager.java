@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Holds the unlocked columns of every world and answers "may a player stand here?". */
@@ -22,6 +23,8 @@ public final class FieldManager {
     private final Supplier<GameData> data;
     private final Supplier<World> lobby;
     private final Map<String, Set<Long>> fields = new HashMap<>();
+    private Consumer<World> unlockListener = world -> {
+    };
 
     public FieldManager(Settings settings, Supplier<GameData> data, Supplier<World> lobby) {
         this.settings = settings;
@@ -49,6 +52,11 @@ public final class FieldManager {
     public void saveTo(GameData gameData) {
         gameData.fields.clear();
         fields.forEach((world, columns) -> gameData.fields.put(world, new ArrayList<>(columns)));
+    }
+
+    /** Called after every newly unlocked column. */
+    public void onUnlock(Consumer<World> listener) {
+        this.unlockListener = listener;
     }
 
     public void clear() {
@@ -96,6 +104,9 @@ public final class FieldManager {
         boolean added = columns.add(pack(x, z));
         if (added && columns.size() == 1) {
             data.get().fieldOrigins.put(world.getName(), pack(x, z));
+        }
+        if (added) {
+            unlockListener.accept(world);
         }
         return added;
     }

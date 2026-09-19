@@ -1,6 +1,7 @@
 package net.kronig.gridlock.field;
 
 import net.kronig.gridlock.config.BorderColor;
+import net.kronig.gridlock.config.BorderStyle;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.game.GameData;
 import org.bukkit.Bukkit;
@@ -31,7 +32,7 @@ public final class BorderRenderer {
     }
 
     public void render() {
-        if (!data.get().state.isIngame()) {
+        if (!data.get().state.isIngame() || !settings.choice(Settings.BORDER_STYLE, BorderStyle.class).particles()) {
             return;
         }
         Color base = settings.choice(Settings.BORDER_COLOR, BorderColor.class).color();

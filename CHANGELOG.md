@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.2.0] – 2026-09-19
+
+### Hinzugefügt
+- **Border als Linie am Boden**: eine durchgehende, statisch leuchtende Linie (Block-Displays) auf dem Boden entlang der Feldkante statt flackernder Partikel. Beim Erweitern färbt sich die gedrückte Kante orange → gelb → grün.
+- **Feste Wand**: Man läuft gegen die Border wie gegen eine Mauer und wird nicht mehr vom Server zurückgesetzt. Umgesetzt mit unsichtbaren Barrieren, die nur der jeweilige Spieler direkt an der Kante sieht.
+- Erweitern wird jetzt über die Bewegungstasten erkannt (Schleichen + Richtung zur Kante), damit es auch an der festen Wand funktioniert.
+- Neue Einstellungen: `border.style` (Linie am Boden / Partikel-Wand / Beides) und `border.solid` (feste Wand an/aus).
+
+### Geändert
+- Auswahl-Einstellungen akzeptieren im Befehl auch den Anfang des deutschen Namens, z. B. `/gl config border.style linie`.
+- Die Partikel-Wand ist nur noch eine optionale Darstellung. Standard ist die Linie am Boden.
+
 ## [1.1.0] – 2026-09-19
 
 ### Hinzugefügt

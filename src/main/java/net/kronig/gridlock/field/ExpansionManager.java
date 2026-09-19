@@ -6,6 +6,7 @@ import net.kronig.gridlock.level.LevelManager;
 import net.kronig.gridlock.ui.ActionBars;
 import net.kronig.gridlock.util.Text;
 import org.bukkit.Bukkit;
+import org.bukkit.Input;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -22,6 +23,8 @@ public final class ExpansionManager {
 
     /** Ticks without a push attempt after which progress is dropped. */
     private static final int PUSH_TIMEOUT = 8;
+    /** Half the player hitbox (0.3) plus a little slack: closer than this to an edge means touching it. */
+    private static final double TOUCH_DISTANCE = 0.36;
 
     public static final class Push {
         final UUID world;
@@ -105,8 +108,61 @@ public final class ExpansionManager {
                 + "<green>" + cost + " Level</green><dark_gray>)</dark_gray>"), 2000);
     }
 
+    /**
+     * With the solid border the client never walks into a locked column, so pushing is detected from the
+     * movement keys: touching an edge while the keys point into the locked neighbour counts as pushing.
+     */
+    private void detectInputPushes() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!fields.isRestricted(player)) {
+                continue;
+            }
+            Input input = player.getCurrentInput();
+            double forward = (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
+            double strafe = (input.isLeft() ? 1 : 0) - (input.isRight() ? 1 : 0);
+            if (forward == 0 && strafe == 0) {
+                continue;
+            }
+            double yaw = Math.toRadians(player.getYaw());
+            double moveX = forward * -Math.sin(yaw) + strafe * Math.cos(yaw);
+            double moveZ = forward * Math.cos(yaw) + strafe * Math.sin(yaw);
+            double length = Math.hypot(moveX, moveZ);
+            moveX /= length;
+            moveZ /= length;
+
+            World world = player.getWorld();
+            double x = player.getX();
+            double z = player.getZ();
+            int bx = (int) Math.floor(x);
+            int bz = (int) Math.floor(z);
+            double best = 0.5; // must point at least roughly (60°) towards the edge
+            int targetX = 0;
+            int targetZ = 0;
+            boolean found = false;
+            int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+            for (int[] dir : directions) {
+                double dot = moveX * dir[0] + moveZ * dir[1];
+                if (dot <= best || fields.isAllowed(world, bx + dir[0], bz + dir[1])) {
+                    continue;
+                }
+                double distanceToEdge = dir[0] > 0 ? bx + 1 - x : dir[0] < 0 ? x - bx : dir[1] > 0 ? bz + 1 - z : z - bz;
+                if (distanceToEdge > TOUCH_DISTANCE) {
+                    continue;
+                }
+                best = dot;
+                targetX = bx + dir[0];
+                targetZ = bz + dir[1];
+                found = true;
+            }
+            if (found) {
+                onBlocked(player, targetX, targetZ);
+            }
+        }
+    }
+
     public void tick() {
         tick++;
+        detectInputPushes();
         int hold = settings.integer(Settings.HOLD_TICKS);
         Iterator<Map.Entry<UUID, Push>> iterator = pushes.entrySet().iterator();
         while (iterator.hasNext()) {

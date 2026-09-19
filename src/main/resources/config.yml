@@ -49,9 +49,15 @@ death:
   mode: NORMAL
 
 border:
+  # LINE = leuchtende Linie am Boden | PARTICLES = Partikel-Wand | BOTH = beides
+  style: LINE
+  # Feste Wand: man läuft dagegen wie gegen eine Mauer (unsichtbare Barrieren nur für den Spieler),
+  # statt vom Server zurückgesetzt zu werden
+  solid: true
   # RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE, WHITE
   color: RED
   view-distance: 16
+  # Nur für die Partikel-Darstellung
   density: 2
   mobs-can-enter: true
 
