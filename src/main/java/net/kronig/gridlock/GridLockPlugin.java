@@ -123,7 +123,9 @@ public final class GridLockPlugin extends JavaPlugin {
         scheduler.runTaskTimer(this, () -> {
             if (linesDirty) {
                 linesDirty = false;
-                borderLines.update();
+                // Look settings are baked into the displays, so redraw them from scratch.
+        borderLines.clear();
+        borderLines.update();
         shulkerWall.refreshAll();
             }
         }, 1L, 1L);

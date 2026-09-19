@@ -2,6 +2,14 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.5.1] – 2026-09-19
+
+### Hinzugefügt
+- Das Aussehen der Border lässt sich jetzt ingame feinjustieren: `border.glow-height` (Höhe des Schimmers), `border.glow-strength` (Deckkraft) und `border.line-width` (Dicke der Linien) – im GUI unter Border oder per `/gl config`.
+
+### Geändert
+- Der Schimmer ist dezenter voreingestellt (28 % Deckkraft, 2,6 Blöcke hoch) und blendet nach oben aus, näher an der Optik der Vanilla-Border.
+
 ## [1.5.0] – 2026-09-19
 
 ### Hinzugefügt

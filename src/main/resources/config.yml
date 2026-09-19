@@ -53,6 +53,11 @@ border:
   style: LINE
   # RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE, WHITE
   color: RED
+  # Leuchtender Vorhang über dem Boden: Höhe in Zehntel-Blöcken, Stärke in Prozent
+  glow-height: 26
+  glow-strength: 28
+  # Dicke der scharfen Linien am Gelände, in Hundertstel-Blöcken
+  line-width: 3
   view-distance: 16
   # Nur für die Partikel-Darstellung
   density: 2

@@ -65,10 +65,8 @@ public final class BorderLines {
     private record Part(Display display, int alpha) {
     }
 
-    private static final float LINE = 0.03f;
-    /** Fading curtain bands above the terrain profile: {height, alpha}. */
-    private static final int[][] FADE_BANDS = {{45, 70}, {55, 38}, {70, 14}};
-    private static final int WALL_ALPHA = 70;
+    /** Share of the total glow height and of the strength per band, from the ground upwards. */
+    private static final double[][] FADE_BANDS = {{0.25, 1.0}, {0.3, 0.55}, {0.45, 0.2}};
     private static final long FLASH_MS = 900;
     private static final Color[] PUSH_STAGES = {
             Color.fromRGB(255, 140, 0), Color.fromRGB(255, 225, 40), Color.fromRGB(70, 235, 70)
@@ -254,14 +252,20 @@ public final class BorderLines {
         double planeOffset = run.plane() + run.fieldSide() * 0.004;
         float yaw = run.alongZ() ? (float) (Math.PI / 2) : 0f;
 
+        double glowHeight = settings.integer(Settings.BORDER_GLOW_HEIGHT) / 10.0;
+        int strength = Math.round(settings.integer(Settings.BORDER_GLOW_STRENGTH) * 255 / 100f);
         int wall = run.high() - run.low();
-        if (wall > 0) {
-            curtain(parts, world, run, planeOffset, mid, run.low(), wall, length, yaw, color, WALL_ALPHA);
+        if (wall > 0 && strength > 0) {
+            curtain(parts, world, run, planeOffset, mid, run.low(), wall, length, yaw, color, strength);
         }
         double bandBottom = run.high();
-        for (int[] band : FADE_BANDS) {
-            float height = band[0] / 100f;
-            curtain(parts, world, run, planeOffset, mid, bandBottom, height, length, yaw, color, band[1]);
+        for (double[] band : FADE_BANDS) {
+            float height = (float) (glowHeight * band[0]);
+            int alpha = (int) Math.round(strength * band[1]);
+            if (height <= 0 || alpha <= 0) {
+                continue;
+            }
+            curtain(parts, world, run, planeOffset, mid, bandBottom, height, length, yaw, color, alpha);
             bandBottom += height;
         }
         // Crisp lines: top of the profile, and the floor edge when the terrain outside is higher.
@@ -311,21 +315,27 @@ public final class BorderLines {
     }
 
     private Part line(World world, Run run, double y, Color color) {
-        float half = LINE / 2f;
+        float lineWidth = lineWidth();
+        float half = lineWidth / 2f;
         Location location = run.alongZ()
                 ? new Location(world, run.plane(), y, run.start())
                 : new Location(world, run.start(), y, run.plane());
         Vector3f scale = run.alongZ()
-                ? new Vector3f(LINE, LINE, run.length() + LINE)
-                : new Vector3f(run.length() + LINE, LINE, LINE);
+                ? new Vector3f(lineWidth, lineWidth, run.length() + lineWidth)
+                : new Vector3f(run.length() + lineWidth, lineWidth, lineWidth);
         return new Part(block(world, location, lineBlock(color), new Vector3f(-half, 0.002f, -half), scale), -1);
     }
 
     private List<Part> spawnPost(World world, Post post, Color color) {
-        float half = LINE / 2f;
+        float lineWidth = lineWidth();
+        float half = lineWidth / 2f;
         Location location = new Location(world, post.x(), post.low(), post.z());
         return List.of(new Part(block(world, location, lineBlock(color), new Vector3f(-half, 0f, -half),
-                new Vector3f(LINE, post.high() - post.low() + LINE, LINE)), -1));
+                new Vector3f(lineWidth, post.high() - post.low() + lineWidth, lineWidth)), -1));
+    }
+
+    private float lineWidth() {
+        return settings.integer(Settings.BORDER_LINE_WIDTH) / 100f;
     }
 
     private static BlockDisplay block(World world, Location location, Material material, Vector3f translation,

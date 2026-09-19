@@ -70,6 +70,14 @@ public final class Settings {
             BorderStyle.LINE));
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
             "Farbe", "Farbe der Border (Linie und Partikel).", BorderColor.RED));
+    public static final Setting BORDER_GLOW_HEIGHT = register(Setting.integer("border.glow-height", Category.BORDER, Material.LIGHT,
+            "Schimmer-Höhe", "Wie hoch der leuchtende Vorhang über dem Boden ausblendet, in Zehntel-Blöcken (26 = 2,6 Blöcke).",
+            26, 0, 60, "/10 Blöcke"));
+    public static final Setting BORDER_GLOW_STRENGTH = register(Setting.integer("border.glow-strength", Category.BORDER, Material.GLOWSTONE_DUST,
+            "Schimmer-Stärke", "Wie kräftig der Vorhang ist (Deckkraft in Prozent).", 28, 0, 100, "%"));
+    public static final Setting BORDER_LINE_WIDTH = register(Setting.integer("border.line-width", Category.BORDER, Material.STRING,
+            "Linien-Dicke", "Dicke der scharfen Linien am Gelände, in Hundertstel-Blöcken (3 = 0,03 Blöcke).",
+            3, 1, 20, "/100 Blöcke"));
     public static final Setting BORDER_VIEW = register(Setting.integer("border.view-distance", Category.BORDER, Material.SPYGLASS,
             "Sichtweite", "Bis zu welcher Entfernung die Border gezeichnet wird.", 16, 4, 48, "Blöcke"));
     public static final Setting BORDER_DENSITY = register(Setting.integer("border.density", Category.BORDER, Material.REDSTONE,
