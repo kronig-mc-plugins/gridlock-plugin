@@ -64,6 +64,10 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 - **Spawn**: Suchradius
 - **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
 
+## Client-Mod (optional)
+
+Für einen **harten Stopp an der Border ohne Zurücksetzen** gibt es den Fabric-Mod [`gridlock-mod`](../gridlock-mod). Mit Mod kollidiert der Client selbst mit den Feldkanten und zeichnet die Border selbst. Spieler mit und ohne Mod können gleichzeitig auf demselben Server spielen, der Server bleibt in jedem Fall der Schiedsrichter.
+
 ## Server-Icon
 
 Das Plugin bringt ein eigenes Icon für die Serverliste mit, eine `server-icon.png` im Server-Ordner ist nicht nötig.

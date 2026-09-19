@@ -354,6 +354,26 @@ public final class GameController implements Listener {
         plugin.saveData();
     }
 
+    /** Diagnostics: GridLock never touches death drops. This records what the server did with them. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void logDeath(PlayerDeathEvent event) {
+        Player dead = event.getPlayer();
+        Location at = dead.getLocation();
+        int stacks = 0;
+        for (org.bukkit.inventory.ItemStack item : dead.getInventory().getContents()) {
+            if (item != null && !item.getType().isAir()) {
+                stacks++;
+            }
+        }
+        plugin.getLogger().info("Tod: " + dead.getName() + " in " + at.getWorld().getName() + " bei "
+                + at.getBlockX() + " " + at.getBlockY() + " " + at.getBlockZ()
+                + " | im Feld: " + plugin.fields().isAllowed(at)
+                + " | Inventar-Stacks: " + stacks + " | Drops: " + event.getDrops().size()
+                + " | keepInventory: " + event.getKeepInventory()
+                + " | abgebrochen: " + event.isCancelled()
+                + " | Ursache: " + (dead.getLastDamageCause() != null ? dead.getLastDamageCause().getCause() : "?"));
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
         if (data().state != GameState.RUNNING

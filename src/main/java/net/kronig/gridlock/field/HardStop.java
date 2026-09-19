@@ -72,7 +72,8 @@ public final class HardStop implements Listener {
         tick++;
         boolean enabled = plugin.settings().bool(Settings.BORDER_HARD_STOP);
         for (Player player : Bukkit.getOnlinePlayers()) {
-            Wall wall = enabled && fields.isRestricted(player) && !player.isInsideVehicle()
+            // Mod players collide with the field on their own client and need no vanilla border.
+            Wall wall = enabled && fields.isRestricted(player) && !player.isInsideVehicle() && !plugin.modLink().hasMod(player)
                     ? compute(player) : Wall.NONE;
             apply(player, wall);
         }

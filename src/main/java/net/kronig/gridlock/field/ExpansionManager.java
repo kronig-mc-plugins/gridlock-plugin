@@ -189,7 +189,12 @@ public final class ExpansionManager {
             actionBars.show(player, Text.mm("<gold>Erweitere…</gold> " + Text.progressBar(progress, 12, "green", "dark_gray")
                     + " <gray>" + cost + " Level"), 500);
             if (push.progress % 4 == 0) {
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 0.5f + (float) progress);
+                // Everyone hears the rising tone while the border is being pushed, no matter how far away they
+                // are: it is played at each listener's own position.
+                for (Player listener : Bukkit.getOnlinePlayers()) {
+                    listener.playSound(listener.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING,
+                            listener.equals(player) ? 0.3f : 0.5f, 0.5f + (float) progress);
+                }
             }
             if (push.progress >= hold) {
                 iterator.remove();

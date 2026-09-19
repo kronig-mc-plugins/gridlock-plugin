@@ -83,6 +83,23 @@ public final class BorderLines {
     private final Map<Object, List<Part>> pieces = new HashMap<>();
     private final Map<UUID, Color> worldColors = new HashMap<>();
     private final Map<UUID, Long> flashUntil = new HashMap<>();
+    /** Players who draw the border themselves (client mod): no displays are built around them. */
+    private java.util.function.Predicate<Player> selfRendering = player -> false;
+    private java.util.function.Consumer<Display> spawnHook = display -> {
+    };
+
+    public void setModHooks(java.util.function.Predicate<Player> selfRendering,
+                            java.util.function.Consumer<Display> spawnHook) {
+        this.selfRendering = selfRendering;
+        this.spawnHook = spawnHook;
+    }
+
+    /** Every display currently spawned for the border. */
+    public List<Display> displays() {
+        List<Display> all = new ArrayList<>();
+        pieces.values().forEach(parts -> parts.forEach(part -> all.add(part.display())));
+        return all;
+    }
 
     public BorderLines(Settings settings, FieldManager fields, ExpansionManager expansion, Supplier<GameData> data) {
         this.settings = settings;
@@ -102,7 +119,8 @@ public final class BorderLines {
         Map<UUID, Map<List<Integer>, Edge>> edgesByWorld = new HashMap<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
             World world = player.getWorld();
-            if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(world)) {
+            if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(world)
+                    || selfRendering.test(player)) {
                 continue;
             }
             collectEdges(world, player.getLocation(), view,
@@ -130,7 +148,9 @@ public final class BorderLines {
                 continue;
             }
             Color color = currentColor(world);
-            pieces.put(piece, piece instanceof Run run ? spawnRun(world, run, color) : spawnPost(world, (Post) piece, color));
+            List<Part> parts = piece instanceof Run run ? spawnRun(world, run, color) : spawnPost(world, (Post) piece, color);
+            parts.forEach(part -> spawnHook.accept(part.display()));
+            pieces.put(piece, parts);
         }
     }
 

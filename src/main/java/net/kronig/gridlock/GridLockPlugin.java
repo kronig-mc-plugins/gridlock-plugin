@@ -17,6 +17,7 @@ import net.kronig.gridlock.game.GameState;
 import net.kronig.gridlock.game.Lobby;
 import net.kronig.gridlock.gui.GuiListener;
 import net.kronig.gridlock.level.LevelManager;
+import net.kronig.gridlock.mod.ModLink;
 import net.kronig.gridlock.timer.TimerManager;
 import net.kronig.gridlock.ui.ActionBars;
 import net.kronig.gridlock.ui.MotdManager;
@@ -48,6 +49,7 @@ public final class GridLockPlugin extends JavaPlugin {
     private BorderLines borderLines;
     private ShulkerWall shulkerWall;
     private HardStop hardStop;
+    private ModLink modLink;
     private boolean linesDirty;
     private GameController game;
     private TimerManager timer;
@@ -94,6 +96,11 @@ public final class GridLockPlugin extends JavaPlugin {
         // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
         shulkerWall = new ShulkerWall(this);
         hardStop = new HardStop(this, fields);
+        modLink = new ModLink(this, fields, expansion);
+        modLink.register();
+        fields.onColumnChange(modLink::onFieldChange);
+        borderLines.setModHooks(modLink::hasMod, modLink::hideFromModPlayers);
+        borderRenderer.setSelfRendering(modLink::hasMod);
         fields.onUnlock(world -> {
             linesDirty = true;
             borderLines.flash(world);
@@ -121,6 +128,7 @@ public final class GridLockPlugin extends JavaPlugin {
         var scheduler = Bukkit.getScheduler();
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
         scheduler.runTaskTimer(this, hardStop::tick, 1L, 1L);
+        scheduler.runTaskTimer(this, modLink::tick, 2L, 2L);
         scheduler.runTaskTimer(this, borderRenderer::render, 4L, 4L);
         scheduler.runTaskTimer(this, borderLines::update, 10L, 10L);
         scheduler.runTaskTimer(this, () -> {
@@ -202,6 +210,7 @@ public final class GridLockPlugin extends JavaPlugin {
         expansion.forget(player);
         borderListener.forget(player);
         hardStop.forget(player);
+        modLink.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);
@@ -209,6 +218,14 @@ public final class GridLockPlugin extends JavaPlugin {
 
     public SidebarManager sidebar() {
         return sidebar;
+    }
+
+    public ModLink modLink() {
+        return modLink;
+    }
+
+    public BorderLines borderLines() {
+        return borderLines;
     }
 
     public ShulkerWall shulkerWall() {

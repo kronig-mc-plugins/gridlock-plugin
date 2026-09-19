@@ -23,6 +23,11 @@ public final class BorderRenderer {
     private final FieldManager fields;
     private final ExpansionManager expansion;
     private final Supplier<GameData> data;
+    private java.util.function.Predicate<Player> selfRendering = player -> false;
+
+    public void setSelfRendering(java.util.function.Predicate<Player> selfRendering) {
+        this.selfRendering = selfRendering;
+    }
 
     public BorderRenderer(Settings settings, FieldManager fields, ExpansionManager expansion, Supplier<GameData> data) {
         this.settings = settings;
@@ -41,7 +46,8 @@ public final class BorderRenderer {
         Particle.DustOptions normal = new Particle.DustOptions(base, 1.1f);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(player.getWorld())) {
+            if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(player.getWorld())
+                    || selfRendering.test(player)) {
                 continue;
             }
             renderFor(player, view, density, base, normal);

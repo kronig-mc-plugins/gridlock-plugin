@@ -25,6 +25,27 @@ public final class FieldManager {
     private final Map<String, Set<Long>> fields = new HashMap<>();
     private Consumer<World> unlockListener = world -> {
     };
+    private ColumnListener columnListener = (world, x, z, unlocked) -> {
+    };
+
+    /** Told about every single column that is unlocked or locked again. */
+    @FunctionalInterface
+    public interface ColumnListener {
+        void changed(World world, int x, int z, boolean unlocked);
+    }
+
+    public void onColumnChange(ColumnListener listener) {
+        this.columnListener = listener;
+    }
+
+    /** All unlocked columns of a world, packed (see {@link #pack}). */
+    public long[] columns(World world) {
+        Set<Long> columns = fields.get(world.getName());
+        if (columns == null) {
+            return new long[0];
+        }
+        return columns.stream().mapToLong(Long::longValue).toArray();
+    }
 
     public FieldManager(Settings settings, Supplier<GameData> data, Supplier<World> lobby) {
         this.settings = settings;
@@ -106,6 +127,7 @@ public final class FieldManager {
         }
         if (added) {
             unlockListener.accept(world);
+            columnListener.changed(world, x, z, true);
         }
         return added;
     }
@@ -116,6 +138,7 @@ public final class FieldManager {
         boolean removed = columns != null && columns.remove(pack(x, z));
         if (removed) {
             unlockListener.accept(world);
+            columnListener.changed(world, x, z, false);
         }
         return removed;
     }

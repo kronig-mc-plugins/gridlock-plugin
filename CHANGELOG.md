@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.7.0] – 2026-09-20
+
+### Hinzugefügt
+- **Unterstützung für den GridLock-Client-Mod (Fabric).** Spieler mit Mod bekommen das Feld an ihren Client geschickt. Der Client kollidiert dann selbst mit den Feldkanten: **harter Stopp ohne Zurücksetzen**, nichts steht im Weg, Klicken, Abbauen und Aufsammeln außerhalb gehen uneingeschränkt. Außerdem zeichnet der Mod die Border selbst (dünne Leuchtlinien, weicher Schimmer, stufenloser Farbwechsel beim Erweitern).
+- **Mit und ohne Mod parallel:** Wer ohne Mod spielt, merkt nichts und bekommt wie bisher die Server-Border und den eingestellten Stopp. Für Mod-Spieler blendet der Server seine Border-Displays aus und schaltet die persönliche Vanilla-Border ab.
+- Ein Spieler gilt erst als Mod-Spieler, wenn die Felddaten wirklich zugestellt wurden. Meldet der Mod ein Problem, schaltet der Server für ihn sofort auf die normale Darstellung zurück.
+- Versionsprüfung: Passt das Mod-Protokoll nicht zum Plugin, bekommt der Spieler einen Hinweis und spielt ohne Mod-Funktionen.
+- **Todes-Protokoll im Server-Log**: Ort, Anzahl der Drops, keepInventory und Ursache bei jedem Tod (zur Diagnose, das Plugin selbst fasst Drops nicht an).
+
+### Geändert
+- Den ansteigenden Ton beim Erweitern hören jetzt **alle Spieler**, egal wie weit entfernt, auch der Erweiternde.
+
 ## [1.6.1] – 2026-09-20
 
 ### Behoben
