@@ -49,7 +49,7 @@ public final class Settings {
     public static final Setting TIMER_SIDEBAR = register(Setting.bool("timer.sidebar", Category.TIMER, Material.PAINTING,
             "Scoreboard", "Zeigt das Scoreboard rechts mit Timer, Spielzeit und Feld-Infos.", true));
     public static final Setting TIMER_RUN_EMPTY = register(Setting.bool("timer.run-when-empty", Category.TIMER, Material.BARRIER,
-            "Läuft ohne Spieler", "Timer läuft weiter, auch wenn niemand online ist.", false));
+            "Läuft ohne Spieler", "Challenge-Timer läuft weiter, auch wenn niemand online ist. Zeit-Level gibt es trotzdem nur, wenn jemand spielt.", false));
 
     // Dimensionen
     public static final Setting NETHER_MULTIPLIER = register(Setting.integer("dimensions.nether-cost-multiplier", Category.DIMENSIONS, Material.NETHERRACK,

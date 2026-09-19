@@ -26,6 +26,9 @@ public final class TimerManager {
             boolean anyoneOnline = !Bukkit.getOnlinePlayers().isEmpty();
             if (anyoneOnline || plugin.settings().bool(Settings.TIMER_RUN_EMPTY)) {
                 data.timerSeconds++;
+            }
+            // Time levels only accrue while someone plays – the pool must not grow on an empty server.
+            if (anyoneOnline) {
                 tickTimeLevels(data);
             }
             for (Player player : Bukkit.getOnlinePlayers()) {

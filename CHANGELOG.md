@@ -2,6 +2,11 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.3.2] – 2026-09-19
+
+### Geändert
+- Zeit-Level gibt es nur noch, solange mindestens ein Spieler online ist. Der Team-Pool wächst also nicht mehr auf einem leeren Server, auch wenn „Timer läuft ohne Spieler“ an ist. Der Challenge-Timer selbst zählt mit dieser Einstellung weiterhin durch.
+
 ## [1.3.1] – 2026-09-19
 
 ### Hinzugefügt
