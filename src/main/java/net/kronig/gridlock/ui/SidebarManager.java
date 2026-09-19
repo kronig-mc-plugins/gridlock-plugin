@@ -2,6 +2,7 @@ package net.kronig.gridlock.ui;
 
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kronig.gridlock.GridLockPlugin;
+import net.kronig.gridlock.config.PaymentMode;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.game.GameData;
@@ -110,14 +111,18 @@ public final class SidebarManager {
                 lines.add("<gray>Nächster: <green>" + plugin.fields().nextCost(world) + " Level");
             }
             lines.add("");
-            lines.add("<gray>Spielzeit:");
+            // Own levels per player only make sense outside the shared team pool.
+            boolean showLevels = plugin.levels().mode() != PaymentMode.POOL;
+            lines.add(showLevels ? "<gray>Spieler: <dark_gray>Level · Zeit" : "<gray>Spielzeit:");
             List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
             online.sort(Comparator.comparingLong((Player p) -> plugin.timer().playtime(p)).reversed());
             int shown = Math.min(online.size(), MAX_LINES - lines.size() - 1);
             for (int i = 0; i < shown; i++) {
                 Player other = online.get(i);
                 String color = other.equals(player) ? "<yellow>" : "<white>";
-                lines.add(" " + color + Text.escape(other.getName()) + " <dark_gray>" + Text.time(plugin.timer().playtime(other)));
+                String level = showLevels ? " <green>" + other.getLevel() + "L</green>" : "";
+                lines.add(" " + color + Text.escape(other.getName()) + level + " <dark_gray>"
+                        + Text.time(plugin.timer().playtime(other)));
             }
         }
         lines.add("<dark_gray>" + "─".repeat(16) + " ");

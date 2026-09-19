@@ -2,6 +2,11 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.3.1] – 2026-09-19
+
+### Hinzugefügt
+- Das Scoreboard zeigt in den spielerbasierten Bezahlmodi (Jeder für sich / Überweisen) neben jedem Spieler auch dessen Level an. Im Team-Pool-Modus bleibt es bei der Spielzeit, weil dort alle dieselben Level haben.
+
 ## [1.3.0] – 2026-09-19
 
 ### Hinzugefügt
