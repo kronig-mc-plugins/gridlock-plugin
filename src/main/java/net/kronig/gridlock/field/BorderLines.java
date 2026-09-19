@@ -1,7 +1,6 @@
 package net.kronig.gridlock.field;
 
 import net.kronig.gridlock.config.BorderColor;
-import net.kronig.gridlock.config.BorderStyle;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.game.GameData;
 import net.kyori.adventure.text.Component;
@@ -30,42 +29,52 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Draws the border as a soft laser curtain on the boundary plane:
- * <ul>
- *     <li>a translucent curtain that is strongest at the ground and fades out upwards (text-display backgrounds,
- *     the only displays with real transparency). Where the terrain outside is higher, its faces in the plane get
- *     tinted as well,</li>
- *     <li>thin crisp lines along the terrain profile in the plane: top edge, floor edge, steps and corners.</li>
- * </ul>
- * Collinear edges with the same profile are merged into one run. While someone pushes against the border, the
- * whole outline of that world shifts towards green, and flashes green on every new block.
+ * Server-side drawing of the border for players without the client mod.
+ *
+ * <p>For every boundary edge the real air spaces of the field column next to it are looked at (tunnel, staircase,
+ * shaft, cave, surface) over the whole height around a player, not just at the player's own level. Each air space
+ * gets a thin line along its floor, one along its ceiling if it has one, and lines on ledges of the terrain
+ * outside. Lines carry a soft glow that fades out upwards (text-display backgrounds, the only displays with real
+ * transparency). Corners get exactly one vertical post, shared by all edges meeting there.
+ *
+ * <p>Block-long pieces with the same height are merged into straight runs. While someone pushes against the
+ * border, the whole outline of that world shifts towards green, and flashes green on every new block.
  */
 public final class BorderLines {
 
     /**
-     * A straight run on plane {@code plane} (x = plane if {@code alongZ}, else z = plane), spanning
-     * {@code start .. start + length} on the other axis. {@code fieldSide} is -1/+1: on which side of the plane the
-     * field lies. {@code low} = floor height inside the field, {@code high} = top of the terrain profile.
+     * A horizontal line on plane {@code plane} (x = plane if {@code alongZ}, else z = plane) at height {@code y},
+     * spanning {@code start .. start + length} on the other axis. {@code fieldSide} is -1/+1: on which side of the
+     * plane the field lies. The glow reaches up to {@code glowTop}, given in tenths of a block; equal to
+     * {@code y * 10} means no glow (ceiling lines).
      */
-    private record Run(UUID world, boolean alongZ, int plane, int fieldSide, int start, int length, int low, int high) {
+    private record Run(UUID world, boolean alongZ, int plane, int fieldSide, int start, int length, int y, int glowTop) {
     }
 
     /** Vertical line at a vertex of the outline, from {@code low} to {@code high}. */
     private record Post(UUID world, int x, int z, int low, int high) {
     }
 
-    /** One edge of one column: position along the plane and its profile. */
-    private record Edge(boolean alongZ, int plane, int fieldSide, int along, int low, int high) {
+    /** One block-long piece of a {@link Run}. */
+    private record Seg(boolean alongZ, int plane, int fieldSide, int along, int y, int glowTop) {
+    }
+
+    /** An air space in a column: from {@code bottom} (first free block) to {@code top} (exclusive). */
+    private record Gap(int bottom, int top, boolean capped) {
     }
 
     /** A spawned display plus the alpha its colour should have (-1 = solid line). */
     private record Part(Display display, int alpha) {
     }
 
-    /** Share of the total glow height and of the strength per band, from the ground upwards. */
+    /** Blocks scanned below and above a player for air spaces. */
+    private static final int SCAN = 40;
+    /** Share of the total glow height and of the strength per band, from the line upwards. */
     private static final double[][] FADE_BANDS = {{0.25, 1.0}, {0.3, 0.55}, {0.45, 0.2}};
     private static final long FLASH_MS = 900;
     private static final Color[] PUSH_STAGES = {
@@ -84,12 +93,18 @@ public final class BorderLines {
     private final Map<UUID, Color> worldColors = new HashMap<>();
     private final Map<UUID, Long> flashUntil = new HashMap<>();
     /** Players who draw the border themselves (client mod): no displays are built around them. */
-    private java.util.function.Predicate<Player> selfRendering = player -> false;
-    private java.util.function.Consumer<Display> spawnHook = display -> {
+    private Predicate<Player> selfRendering = player -> false;
+    private Consumer<Display> spawnHook = display -> {
     };
 
-    public void setModHooks(java.util.function.Predicate<Player> selfRendering,
-                            java.util.function.Consumer<Display> spawnHook) {
+    public BorderLines(Settings settings, FieldManager fields, ExpansionManager expansion, Supplier<GameData> data) {
+        this.settings = settings;
+        this.fields = fields;
+        this.expansion = expansion;
+        this.data = data;
+    }
+
+    public void setModHooks(Predicate<Player> selfRendering, Consumer<Display> spawnHook) {
         this.selfRendering = selfRendering;
         this.spawnHook = spawnHook;
     }
@@ -101,33 +116,33 @@ public final class BorderLines {
         return all;
     }
 
-    public BorderLines(Settings settings, FieldManager fields, ExpansionManager expansion, Supplier<GameData> data) {
-        this.settings = settings;
-        this.fields = fields;
-        this.expansion = expansion;
-        this.data = data;
-    }
-
     // ------------------------------------------------------------------ geometry
 
     public void update() {
-        if (!data.get().state.isIngame() || !settings.choice(Settings.BORDER_STYLE, BorderStyle.class).line()) {
+        if (!data.get().state.isIngame()) {
             clear();
             return;
         }
         int view = Math.max(settings.integer(Settings.BORDER_VIEW), 12);
-        Map<UUID, Map<List<Integer>, Edge>> edgesByWorld = new HashMap<>();
+        Map<UUID, Set<Seg>> segsByWorld = new HashMap<>();
+        Map<UUID, Map<Long, List<int[]>>> postsByWorld = new HashMap<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
             World world = player.getWorld();
             if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(world)
                     || selfRendering.test(player)) {
                 continue;
             }
-            collectEdges(world, player.getLocation(), view,
-                    edgesByWorld.computeIfAbsent(world.getUID(), k -> new HashMap<>()));
+            collect(world, player.getLocation(), view,
+                    segsByWorld.computeIfAbsent(world.getUID(), k -> new HashSet<>()),
+                    postsByWorld.computeIfAbsent(world.getUID(), k -> new HashMap<>()));
         }
         Set<Object> wanted = new HashSet<>();
-        edgesByWorld.forEach((world, edges) -> buildPieces(world, edges.values(), wanted));
+        segsByWorld.forEach((world, segs) -> buildRuns(world, segs, wanted));
+        postsByWorld.forEach((world, posts) -> posts.forEach((vertex, ranges) -> {
+            for (int[] range : merge(ranges)) {
+                wanted.add(new Post(world, FieldManager.unpackX(vertex), FieldManager.unpackZ(vertex), range[0], range[1]));
+            }
+        }));
 
         Iterator<Map.Entry<Object, List<Part>>> iterator = pieces.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -154,120 +169,144 @@ public final class BorderLines {
         }
     }
 
-    /**
-     * Chunk-aligned scan window around a player, so runs stay stable while walking inside a chunk. Heights are
-     * taken relative to the player, so the border is also drawn down in a mine shaft or a cave, not just on the
-     * surface far above.
-     */
-    private void collectEdges(World world, Location center, int view, Map<List<Integer>, Edge> edges) {
+    /** Chunk-aligned scan window around a player, so pieces stay stable while walking inside a chunk. */
+    private void collect(World world, Location center, int view, Set<Seg> segs, Map<Long, List<int[]>> posts) {
         int chunkRadius = (view + 15) / 16;
         int cx = center.getBlockX() >> 4;
         int cz = center.getBlockZ() >> 4;
         int refY = center.getBlockY();
-        boolean ceiling = world.hasCeiling(); // Nether: the "surface" is the bedrock roof, keep it at player height
+        int glowTenths = settings.integer(Settings.BORDER_GLOW_STRENGTH) > 0
+                ? settings.integer(Settings.BORDER_GLOW_HEIGHT) : 0;
+        Map<Long, List<Gap>> gapCache = new HashMap<>();
         for (int x = (cx - chunkRadius) << 4; x < (cx + chunkRadius + 1) << 4; x++) {
             for (int z = (cz - chunkRadius) << 4; z < (cz + chunkRadius + 1) << 4; z++) {
                 if (!fields.isAllowed(world, x, z)) {
                     continue;
                 }
-                int inner = Integer.MIN_VALUE;
                 for (int dir = 0; dir < 4; dir++) {
                     int dx = dir == 0 ? 1 : dir == 1 ? -1 : 0;
                     int dz = dir == 2 ? 1 : dir == 3 ? -1 : 0;
-                    if (fields.isAllowed(world, x + dx, z + dz)) {
-                        continue;
+                    if (!fields.isAllowed(world, x + dx, z + dz)) {
+                        collectEdge(world, x, z, dx, dz, refY, glowTenths, gapCache, segs, posts);
                     }
-                    if (inner == Integer.MIN_VALUE) {
-                        inner = groundBelow(world, x, z, refY);
-                    }
-                    if (inner <= world.getMinHeight()) {
-                        break; // void inside the field (End island edge): nothing to stand on
-                    }
-                    // Two blocks above the player's feet: a wall next to them is covered up to head height.
-                    int outer = groundBelow(world, x + dx, z + dz, refY + 2);
-                    boolean alongZ = dx != 0;
-                    int plane = alongZ ? (dx > 0 ? x + 1 : x) : (dz > 0 ? z + 1 : z);
-                    int fieldSide = (dx + dz) > 0 ? -1 : 1;
-                    int along = alongZ ? z : x;
-                    int low = inner + 1;
-                    int high = Math.max(inner, outer) + 1;
-                    if (!ceiling) {
-                        // Down in a hole the wall still reaches the surface, so it is visible from above as well.
-                        int top = Math.max(surface(world, x, z), surface(world, x + dx, z + dz)) + 1;
-                        high = Math.max(high, top);
-                    }
-                    edges.put(List.of(alongZ ? 1 : 0, plane, along, fieldSide),
-                            new Edge(alongZ, plane, fieldSide, along, low, high));
                 }
             }
         }
     }
 
-    private static int surface(World world, int x, int z) {
-        return world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
-    }
-
-    /** Highest solid block at or below {@code fromY}; falls back to the surface above ground. */
-    private static int groundBelow(World world, int x, int z, int fromY) {
-        int start = Math.min(fromY, world.getMaxHeight() - 1);
-        int stop = Math.max(world.getMinHeight(), start - 40);
-        for (int y = start; y >= stop; y--) {
-            if (world.getBlockAt(x, y, z).getType().isSolid()) {
-                return y;
+    private void collectEdge(World world, int x, int z, int dx, int dz, int refY, int glowTenths,
+                             Map<Long, List<Gap>> gapCache, Set<Seg> segs, Map<Long, List<int[]>> posts) {
+        boolean alongZ = dx != 0;
+        int plane = alongZ ? (dx > 0 ? x + 1 : x) : (dz > 0 ? z + 1 : z);
+        int fieldSide = (dx + dz) > 0 ? -1 : 1;
+        int along = alongZ ? z : x;
+        int outerSurface = world.getHighestBlockYAt(x + dx, z + dz, HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1;
+        for (Gap gap : gaps(world, x, z, refY, gapCache)) {
+            segs.add(new Seg(alongZ, plane, fieldSide, along, gap.bottom(),
+                    Math.min(gap.bottom() * 10 + glowTenths, gap.top() * 10)));
+            if (gap.capped()) {
+                segs.add(new Seg(alongZ, plane, fieldSide, along, gap.top(), gap.top() * 10));
             }
-        }
-        int surface = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
-        return surface <= start ? surface : world.getMinHeight();
-    }
-
-    private static void buildPieces(UUID world, Iterable<Edge> edges, Set<Object> out) {
-        Map<List<Integer>, TreeMap<Integer, Edge>> lines = new HashMap<>();
-        Map<Long, List<Edge>> vertices = new HashMap<>();
-        for (Edge edge : edges) {
-            lines.computeIfAbsent(List.of(edge.alongZ() ? 1 : 0, edge.plane(), edge.fieldSide(), edge.low(), edge.high()),
-                    k -> new TreeMap<>()).put(edge.along(), edge);
+            // Ledges of the terrain outside: solid below, free above, within this air space.
+            int ledgeLimit = Math.min(gap.top(), gap.bottom() + SCAN);
+            for (int y = gap.bottom() + 1; y < ledgeLimit; y++) {
+                if (solid(world, x + dx, y - 1, z + dz) && !solid(world, x + dx, y, z + dz)) {
+                    segs.add(new Seg(alongZ, plane, fieldSide, along, y, Math.min(y * 10 + glowTenths, gap.top() * 10)));
+                }
+            }
+            // Posts at both ends, unless the outline simply continues there with the same air space.
+            int postTop = gap.capped() ? gap.top() : Math.max(gap.bottom(), Math.min(gap.top(), outerSurface));
+            if (postTop <= gap.bottom()) {
+                continue;
+            }
             for (int end = 0; end <= 1; end++) {
-                int vx = edge.alongZ() ? edge.plane() : edge.along() + end;
-                int vz = edge.alongZ() ? edge.along() + end : edge.plane();
-                vertices.computeIfAbsent(FieldManager.pack(vx, vz), k -> new ArrayList<>()).add(edge);
+                int step = end == 0 ? -1 : 1;
+                int nx = alongZ ? x : x + step;
+                int nz = alongZ ? z + step : z;
+                boolean continues = fields.isAllowed(world, nx, nz) && !fields.isAllowed(world, nx + dx, nz + dz)
+                        && gaps(world, nx, nz, refY, gapCache).contains(gap);
+                if (continues) {
+                    continue;
+                }
+                long vertex = alongZ ? FieldManager.pack(plane, along + end) : FieldManager.pack(along + end, plane);
+                posts.computeIfAbsent(vertex, k -> new ArrayList<>()).add(new int[]{gap.bottom(), postTop});
             }
         }
-        for (Map.Entry<List<Integer>, TreeMap<Integer, Edge>> line : lines.entrySet()) {
-            Edge sample = line.getValue().firstEntry().getValue();
+    }
+
+    /** All air spaces of a column within the scan range around the player. */
+    private static List<Gap> gaps(World world, int x, int z, int refY, Map<Long, List<Gap>> cache) {
+        return cache.computeIfAbsent(FieldManager.pack(x, z), key -> {
+            List<Gap> gaps = new ArrayList<>();
+            int min = Math.max(world.getMinHeight(), refY - SCAN);
+            int max = Math.min(world.getMaxHeight() - 1, refY + SCAN);
+            int y = min;
+            // Start on solid ground: an air space cut off by the lower scan limit has no floor to draw.
+            while (y <= max && !solid(world, x, y, z)) {
+                y++;
+            }
+            while (y <= max) {
+                while (y <= max && solid(world, x, y, z)) {
+                    y++;
+                }
+                if (y > max) {
+                    break;
+                }
+                int bottom = y;
+                while (y <= max && !solid(world, x, y, z)) {
+                    y++;
+                }
+                gaps.add(new Gap(bottom, y, y <= max));
+            }
+            return gaps;
+        });
+    }
+
+    private static boolean solid(World world, int x, int y, int z) {
+        return world.getBlockAt(x, y, z).getType().isSolid();
+    }
+
+    /** Merges overlapping or touching ranges, so a post is one clean piece instead of stacked duplicates. */
+    private static List<int[]> merge(List<int[]> ranges) {
+        ranges.sort((a, b) -> Integer.compare(a[0], b[0]));
+        List<int[]> merged = new ArrayList<>();
+        for (int[] range : ranges) {
+            if (!merged.isEmpty() && range[0] <= merged.get(merged.size() - 1)[1]) {
+                int[] last = merged.get(merged.size() - 1);
+                last[1] = Math.max(last[1], range[1]);
+            } else {
+                merged.add(new int[]{range[0], range[1]});
+            }
+        }
+        return merged;
+    }
+
+    /** Joins block-long segments with the same height and glow into straight runs. */
+    private static void buildRuns(UUID world, Set<Seg> segs, Set<Object> out) {
+        Map<List<Integer>, TreeMap<Integer, Seg>> lines = new HashMap<>();
+        for (Seg seg : segs) {
+            lines.computeIfAbsent(List.of(seg.alongZ() ? 1 : 0, seg.plane(), seg.fieldSide(), seg.y(), seg.glowTop()),
+                    k -> new TreeMap<>()).put(seg.along(), seg);
+        }
+        for (TreeMap<Integer, Seg> line : lines.values()) {
+            Seg sample = line.firstEntry().getValue();
             Integer start = null;
             int previous = 0;
-            for (int along : line.getValue().keySet()) {
+            for (int along : line.keySet()) {
                 if (start != null && along == previous + 1) {
                     previous = along;
                     continue;
                 }
                 if (start != null) {
                     out.add(new Run(world, sample.alongZ(), sample.plane(), sample.fieldSide(), start,
-                            previous - start + 1, sample.low(), sample.high()));
+                            previous - start + 1, sample.y(), sample.glowTop()));
                 }
                 start = along;
                 previous = along;
             }
             if (start != null) {
                 out.add(new Run(world, sample.alongZ(), sample.plane(), sample.fieldSide(), start,
-                        previous - start + 1, sample.low(), sample.high()));
-            }
-        }
-        // Vertical lines wherever the profile jumps at a vertex (steps, trench corners, cliffs).
-        for (Map.Entry<Long, List<Edge>> vertex : vertices.entrySet()) {
-            int low = Integer.MAX_VALUE;
-            int high = Integer.MIN_VALUE;
-            Set<Integer> profile = new HashSet<>();
-            for (Edge edge : vertex.getValue()) {
-                low = Math.min(low, edge.low());
-                high = Math.max(high, edge.high());
-                profile.add(edge.low() * 4096 + edge.high());
-            }
-            boolean corner = vertex.getValue().stream().anyMatch(Edge::alongZ)
-                    && vertex.getValue().stream().anyMatch(edge -> !edge.alongZ());
-            if (high > low && (corner || profile.size() > 1)) {
-                out.add(new Post(world, FieldManager.unpackX(vertex.getKey()), FieldManager.unpackZ(vertex.getKey()),
-                        low, high));
+                        previous - start + 1, sample.y(), sample.glowTop()));
             }
         }
     }
@@ -278,35 +317,28 @@ public final class BorderLines {
         List<Part> parts = new ArrayList<>();
         float length = run.length();
         double mid = run.start() + length / 2.0;
-        // Curtain sits a hair inside the field so it never z-fights with block faces in the plane.
+        // The glow sits a hair inside the field so it never z-fights with block faces in the plane.
         double planeOffset = run.plane() + run.fieldSide() * 0.004;
         float yaw = run.alongZ() ? (float) (Math.PI / 2) : 0f;
 
-        double glowHeight = settings.integer(Settings.BORDER_GLOW_HEIGHT) / 10.0;
+        double fullGlow = settings.integer(Settings.BORDER_GLOW_HEIGHT) / 10.0;
         int strength = Math.round(settings.integer(Settings.BORDER_GLOW_STRENGTH) * 255 / 100f);
-        int wall = run.high() - run.low();
-        if (wall > 0 && strength > 0) {
-            curtain(parts, world, run, planeOffset, mid, run.low(), wall, length, yaw, color, strength);
-        }
-        double bandBottom = run.high();
+        double limit = run.glowTop() / 10.0;
+        double bandBottom = run.y();
         for (double[] band : FADE_BANDS) {
-            float height = (float) (glowHeight * band[0]);
+            double bandTop = Math.min(bandBottom + fullGlow * band[0], limit);
             int alpha = (int) Math.round(strength * band[1]);
-            if (height <= 0 || alpha <= 0) {
-                continue;
+            if (bandTop - bandBottom < 0.01 || alpha <= 0) {
+                break;
             }
-            curtain(parts, world, run, planeOffset, mid, bandBottom, height, length, yaw, color, alpha);
-            bandBottom += height;
+            curtain(parts, world, run, planeOffset, mid, bandBottom, (float) (bandTop - bandBottom), length, yaw, color, alpha);
+            bandBottom = bandTop;
         }
-        // Crisp lines: top of the profile, and the floor edge when the terrain outside is higher.
-        parts.add(line(world, run, run.high(), color));
-        if (wall > 0) {
-            parts.add(line(world, run, run.low(), color));
-        }
+        parts.add(line(world, run, color));
         return parts;
     }
 
-    /** One curtain band, as two back-to-back quads because text displays are single-sided. */
+    /** One glow band, as two back-to-back quads because text displays are single-sided. */
     private void curtain(List<Part> parts, World world, Run run, double plane, double mid, double bottom, float height,
                          float width, float yaw, Color color, int alpha) {
         Location location = run.alongZ()
@@ -344,23 +376,24 @@ public final class BorderLines {
         return new Transformation(translation, rotation, new Vector3f(8f * width, 4f * height, 1f), new Quaternionf());
     }
 
-    private Part line(World world, Run run, double y, Color color) {
+    /** Thin square rod centred exactly on the edge, slightly longer so neighbours and posts close up. */
+    private Part line(World world, Run run, Color color) {
         float lineWidth = lineWidth();
         float half = lineWidth / 2f;
         Location location = run.alongZ()
-                ? new Location(world, run.plane(), y, run.start())
-                : new Location(world, run.start(), y, run.plane());
+                ? new Location(world, run.plane(), run.y(), run.start())
+                : new Location(world, run.start(), run.y(), run.plane());
         Vector3f scale = run.alongZ()
                 ? new Vector3f(lineWidth, lineWidth, run.length() + lineWidth)
                 : new Vector3f(run.length() + lineWidth, lineWidth, lineWidth);
-        return new Part(block(world, location, lineBlock(color), new Vector3f(-half, 0.002f, -half), scale), -1);
+        return new Part(block(world, location, lineBlock(color), new Vector3f(-half, -half, -half), scale), -1);
     }
 
     private List<Part> spawnPost(World world, Post post, Color color) {
         float lineWidth = lineWidth();
         float half = lineWidth / 2f;
         Location location = new Location(world, post.x(), post.low(), post.z());
-        return List.of(new Part(block(world, location, lineBlock(color), new Vector3f(-half, 0f, -half),
+        return List.of(new Part(block(world, location, lineBlock(color), new Vector3f(-half, -half, -half),
                 new Vector3f(lineWidth, post.high() - post.low() + lineWidth, lineWidth)), -1));
     }
 

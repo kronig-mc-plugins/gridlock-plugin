@@ -5,7 +5,6 @@ import net.kronig.gridlock.command.TimerCommand;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.field.BorderLines;
 import net.kronig.gridlock.field.BorderListener;
-import net.kronig.gridlock.field.BorderRenderer;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.field.FieldManager;
 import net.kronig.gridlock.field.HardStop;
@@ -24,6 +23,12 @@ import net.kronig.gridlock.ui.MotdManager;
 import net.kronig.gridlock.ui.SidebarManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -44,7 +49,6 @@ public final class GridLockPlugin extends JavaPlugin {
     private LevelManager levels;
     private ActionBars actionBars;
     private ExpansionManager expansion;
-    private BorderRenderer borderRenderer;
     private BorderListener borderListener;
     private BorderLines borderLines;
     private ShulkerWall shulkerWall;
@@ -90,7 +94,6 @@ public final class GridLockPlugin extends JavaPlugin {
         levels = new LevelManager(settings, this::data, player -> fields.isChallengeWorld(player.getWorld()));
         actionBars = new ActionBars();
         expansion = new ExpansionManager(settings, fields, levels, actionBars);
-        borderRenderer = new BorderRenderer(settings, fields, expansion, this::data);
         borderListener = new BorderListener(this, fields, expansion);
         borderLines = new BorderLines(settings, fields, expansion, this::data);
         // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
@@ -100,7 +103,6 @@ public final class GridLockPlugin extends JavaPlugin {
         modLink.register();
         fields.onColumnChange(modLink::onFieldChange);
         borderLines.setModHooks(modLink::hasMod, modLink::hideFromModPlayers);
-        borderRenderer.setSelfRendering(modLink::hasMod);
         fields.onUnlock(world -> {
             linesDirty = true;
             borderLines.flash(world);
@@ -118,6 +120,23 @@ public final class GridLockPlugin extends JavaPlugin {
         pm.registerEvents(borderListener, this);
         pm.registerEvents(shulkerWall, this);
         pm.registerEvents(hardStop, this);
+        pm.registerEvents(new Listener() {
+            // Terrain changed next to the border: redraw right away instead of waiting for the next interval.
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            public void onBreak(BlockBreakEvent event) {
+                linesDirty = true;
+            }
+
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            public void onPlace(BlockPlaceEvent event) {
+                linesDirty = true;
+            }
+
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            public void onExplode(EntityExplodeEvent event) {
+                linesDirty = true;
+            }
+        }, this);
         pm.registerEvents(game, this);
         pm.registerEvents(motd, this);
 
@@ -129,7 +148,6 @@ public final class GridLockPlugin extends JavaPlugin {
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
         scheduler.runTaskTimer(this, hardStop::tick, 1L, 1L);
         scheduler.runTaskTimer(this, modLink::tick, 2L, 2L);
-        scheduler.runTaskTimer(this, borderRenderer::render, 4L, 4L);
         scheduler.runTaskTimer(this, borderLines::update, 10L, 10L);
         scheduler.runTaskTimer(this, () -> {
             if (linesDirty) {

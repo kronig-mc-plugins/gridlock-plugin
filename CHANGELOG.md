@@ -2,6 +2,21 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.7.1] – 2026-09-20
+
+### Behoben
+- **Server-Border: Linien verschwanden oder fehlten** in Treppengängen, Schächten und unter Überhängen, weil die Geometrie nur relativ zur Spielerhöhe berechnet wurde. Jetzt werden wie im Mod die tatsächlichen Lufträume jeder Kante über die ganze Höhe um den Spieler ausgewertet: Bodenlinie, Deckenlinie und Linien auf Geländeabsätzen, jeweils mit eigenem Glow.
+- **Doppelte senkrechte Linien** an Ecken: nur noch ein Pfosten pro Ecke, überlappende Stücke werden zusammengefasst. Linien sitzen exakt mittig auf der Kante.
+- **Lobby-Mauern** am Inselrand waren nicht miteinander verbunden. Die Lobby wird beim nächsten Start einmal neu gebaut.
+
+### Entfernt
+- **Partikel-Border** samt den Einstellungen `border.style` und `border.density`. Es gibt nur noch die Linien-Border (Server) bzw. die Client-Border (Mod).
+
+### Geändert
+- Beim Abbauen, Platzieren und bei Explosionen wird die Server-Border sofort neu gezeichnet statt erst beim nächsten Intervall.
+- Die flächige Rotfärbung ganzer Wände entfällt, es bleibt der weiche Glow über den Linien.
+- **Glow dezenter**: Standard jetzt 10 % Stärke und 1,2 Blöcke Höhe (vorher 28 % und 2,6). Configs mit den alten Standardwerten werden automatisch umgestellt.
+
 ## [1.7.0] – 2026-09-20
 
 ### Hinzugefügt

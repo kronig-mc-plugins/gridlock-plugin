@@ -38,7 +38,7 @@ public final class Lobby implements Listener {
     public static final String WORLD_NAME = "gridlock_lobby";
     private static final int PLATFORM_Y = LobbyBuilder.TOP;
     /** Bump to rebuild the lobby on existing servers. */
-    private static final int LOBBY_VERSION = 2;
+    private static final int LOBBY_VERSION = 3;
 
     private final GridLockPlugin plugin;
     private final NamespacedKey itemKey;

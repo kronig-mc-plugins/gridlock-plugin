@@ -60,7 +60,7 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 - **Timer**: Actionbar, Scoreboard, läuft ohne Spieler
 - **Dimensionen**: Kosten-Multiplikator Nether/End, Radius der freien Drachen-Insel
 - **Tod**: Normal / Hardcore
-- **Border**: Darstellung (Laser-Vorhang / Partikel-Wand / beides), Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
+- **Border**: harter Stopp, Farbe, Glow-Höhe, Glow-Stärke, Linien-Dicke, Sichtweite, Monster dürfen ins Feld
 - **Spawn**: Suchradius
 - **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
 

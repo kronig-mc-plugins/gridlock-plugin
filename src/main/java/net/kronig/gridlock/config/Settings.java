@@ -65,26 +65,21 @@ public final class Settings {
             "Tod-Modus", "Normal: im Feld respawnen. Hardcore: stirbt einer, ist die Runde für alle vorbei.", DeathMode.NORMAL));
 
     // Border
-    public static final Setting BORDER_STYLE = register(Setting.choice("border.style", Category.BORDER, Material.PAINTING,
-            "Darstellung", "Laser-Vorhang: leuchtender Schimmer über dem Boden mit dünnen Linien am Gelände. Partikel-Wand: rote Partikel an den Kanten.",
-            BorderStyle.LINE));
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
-            "Farbe", "Farbe der Border (Linie und Partikel).", BorderColor.RED));
+            "Farbe", "Farbe der Border.", BorderColor.RED));
     public static final Setting BORDER_HARD_STOP = register(Setting.bool("border.hard-stop", Category.BORDER, Material.IRON_BARS,
             "Harter Stopp", "Du prallst an der Border ab wie an einer Wand (persönliche Vanilla-Border genau an der Kante, auf die du zuläufst). Solange du dagegen läufst, kannst du dahinter nicht abbauen – stehen bleiben reicht. Aus: der Server setzt dich zurück.",
             true));
     public static final Setting BORDER_GLOW_HEIGHT = register(Setting.integer("border.glow-height", Category.BORDER, Material.LIGHT,
-            "Schimmer-Höhe", "Wie hoch der leuchtende Vorhang über dem Boden ausblendet, in Zehntel-Blöcken (26 = 2,6 Blöcke).",
-            26, 0, 60, "/10 Blöcke"));
+            "Schimmer-Höhe", "Wie hoch der Glow über den Linien ausblendet, in Zehntel-Blöcken (12 = 1,2 Blöcke).",
+            12, 0, 60, "/10 Blöcke"));
     public static final Setting BORDER_GLOW_STRENGTH = register(Setting.integer("border.glow-strength", Category.BORDER, Material.GLOWSTONE_DUST,
-            "Schimmer-Stärke", "Wie kräftig der Vorhang ist (Deckkraft in Prozent).", 28, 0, 100, "%"));
+            "Schimmer-Stärke", "Wie kräftig der Glow ist (Deckkraft in Prozent).", 10, 0, 100, "%"));
     public static final Setting BORDER_LINE_WIDTH = register(Setting.integer("border.line-width", Category.BORDER, Material.STRING,
             "Linien-Dicke", "Dicke der scharfen Linien am Gelände, in Hundertstel-Blöcken (3 = 0,03 Blöcke).",
             3, 1, 20, "/100 Blöcke"));
     public static final Setting BORDER_VIEW = register(Setting.integer("border.view-distance", Category.BORDER, Material.SPYGLASS,
             "Sichtweite", "Bis zu welcher Entfernung die Border gezeichnet wird.", 16, 4, 48, "Blöcke"));
-    public static final Setting BORDER_DENSITY = register(Setting.integer("border.density", Category.BORDER, Material.REDSTONE,
-            "Partikel-Dichte", "Wie dicht die Partikelwand ist (nur bei Darstellung Partikel/Beides).", 2, 1, 4, ""));
     public static final Setting MOBS_CAN_ENTER = register(Setting.bool("border.mobs-can-enter", Category.BORDER, Material.ZOMBIE_HEAD,
             "Monster dürfen rein", "Ob Monster von außen ins Feld laufen dürfen.", true));
 
@@ -135,6 +130,12 @@ public final class Settings {
         plugin.reloadConfig();
         FileConfiguration config = plugin.getConfig();
         boolean changed = false;
+        // 1.7.1 toned the glow down. Configs that still carry the old defaults follow along.
+        if (config.getInt(BORDER_GLOW_HEIGHT.key(), -1) == 26 && config.getInt(BORDER_GLOW_STRENGTH.key(), -1) == 28) {
+            config.set(BORDER_GLOW_HEIGHT.key(), BORDER_GLOW_HEIGHT.defaultValue());
+            config.set(BORDER_GLOW_STRENGTH.key(), BORDER_GLOW_STRENGTH.defaultValue());
+            changed = true;
+        }
         for (Setting setting : REGISTRY.values()) {
             Object raw = config.get(setting.key());
             if (raw == null || setting.parse(String.valueOf(raw)) == null) {

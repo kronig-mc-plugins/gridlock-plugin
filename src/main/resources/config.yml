@@ -49,21 +49,17 @@ death:
   mode: NORMAL
 
 border:
-  # LINE = Laser-Vorhang (Schimmer + dünne Linien) | PARTICLES = Partikel-Wand | BOTH = beides
-  style: LINE
   # RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE, WHITE
   color: RED
   # Harter Stopp: persönliche Vanilla-Border genau an der Kante, auf die man zuläuft (der Client prallt selbst ab).
   # Solange man dagegen läuft, lässt der Client dahinter nicht abbauen. false = der Server setzt zurück.
   hard-stop: true
   # Leuchtender Vorhang über dem Boden: Höhe in Zehntel-Blöcken, Stärke in Prozent
-  glow-height: 26
-  glow-strength: 28
+  glow-height: 12
+  glow-strength: 10
   # Dicke der scharfen Linien am Gelände, in Hundertstel-Blöcken
   line-width: 3
   view-distance: 16
-  # Nur für die Partikel-Darstellung
-  density: 2
   mobs-can-enter: true
 
 spawn:

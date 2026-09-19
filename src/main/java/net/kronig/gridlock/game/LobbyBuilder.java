@@ -6,7 +6,9 @@ import org.bukkit.Material;
 import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Orientable;
+import org.bukkit.block.data.type.Wall;
 
 import java.util.Random;
 
@@ -32,6 +34,7 @@ final class LobbyBuilder {
     void build() {
         clear(-20, 20, TOP - 2, TOP + 4);
         mainIsland();
+        connectWalls();
         centerPedestal();
         miniIsland(-27, TOP - 4, -8, 4, Island.FOREST);
         miniIsland(25, TOP + 3, -12, 4, Island.DESERT);
@@ -60,6 +63,37 @@ final class LobbyBuilder {
                 }
                 surface(x, z, distance);
                 underside(x, z, distance, RADIUS, 16);
+            }
+        }
+    }
+
+    /**
+     * Blocks are placed without physics (fast, no falling sand on the mini islands), so walls do not know their
+     * neighbours yet. Compute the connections of the rim wall by hand.
+     */
+    private void connectWalls() {
+        for (int x = -RADIUS - 1; x <= RADIUS + 1; x++) {
+            for (int z = -RADIUS - 1; z <= RADIUS + 1; z++) {
+                Block block = world.getBlockAt(x, TOP + 1, z);
+                if (!(block.getBlockData() instanceof Wall wall)) {
+                    continue;
+                }
+                boolean straightX = true;
+                boolean straightZ = true;
+                for (BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST}) {
+                    boolean connected = block.getRelative(face).getBlockData() instanceof Wall;
+                    wall.setHeight(face, connected ? Wall.Height.LOW : Wall.Height.NONE);
+                    if (face == BlockFace.NORTH || face == BlockFace.SOUTH) {
+                        straightX &= !connected;
+                        straightZ &= connected;
+                    } else {
+                        straightX &= connected;
+                        straightZ &= !connected;
+                    }
+                }
+                // The centre post disappears only on a straight run, like vanilla does it.
+                wall.setUp(!(straightX || straightZ));
+                block.setBlockData(wall, false);
             }
         }
     }
