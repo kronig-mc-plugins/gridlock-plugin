@@ -1,0 +1,76 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                     GridLock – Konfiguration                   ║
+# ╚══════════════════════════════════════════════════════════════╝
+# Alle Werte lassen sich auch ingame ändern:
+#   GUI:    /gl  (oder das Comparator-Item in der Lobby)
+#   Befehl: /gl config <key> <wert>
+# Nach manuellen Änderungen an dieser Datei: /gl reload
+
+expand:
+  # Wie lange man schleichend gegen die Border drücken muss (20 Ticks = 1 Sekunde)
+  hold-ticks: 20
+  # Level-Kosten pro neuem Block
+  cost-base: 1
+  # Kosten steigen um so viele Level ...
+  cost-increase: 0
+  # ... jedes Mal nach so vielen freigeschalteten Blöcken
+  cost-increase-every: 25
+  # Chat-Nachricht bei 10, 25, 50, 100, ... Blöcken
+  milestone-announcements: true
+
+levels:
+  # PLAYER = wer erweitert, zahlt mit eigenen Leveln | POOL = gemeinsamer Team-Pool
+  payment-mode: PLAYER
+  # Normale XP (Erze, Mobs, Öfen ...) zählt
+  vanilla-xp: true
+  # POOL-Modus: so viel Prozent der aufgesammelten XP fließt in den Pool
+  pool-share-percent: 100
+  # Automatische Level für Spielzeit
+  time-levels: true
+  time-interval-minutes: 5
+  time-amount: 1
+  # Level zum Start der Runde (pro Spieler bzw. für den Pool)
+  start-levels: 5
+
+timer:
+  actionbar: true
+  sidebar: true
+  # Timer läuft weiter, wenn niemand online ist
+  run-when-empty: false
+
+dimensions:
+  nether-cost-multiplier: 1
+  end-cost-multiplier: 1
+  # Radius um 0/0 im End ohne Border (Drachen-Insel). Dahinter gilt wieder die Border.
+  end-free-radius: 200
+
+death:
+  # NORMAL = im Feld respawnen | HARDCORE = einer stirbt -> Runde verloren
+  mode: NORMAL
+
+border:
+  # RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE, WHITE
+  color: RED
+  view-distance: 16
+  density: 2
+  mobs-can-enter: true
+
+spawn:
+  # Radius um 0/0, in dem nach dem Spawn gesucht wird
+  search-radius: 3000
+
+motd:
+  enabled: true
+  show-stats: true
+  interval-seconds: 5
+  hover-stats: true
+  # Wechselnde Sprüche in Zeile 2 (MiniMessage-Format: https://docs.advntr.dev/minimessage/format)
+  slogans:
+    - "<gray>Jeder Block kostet. <red>Jeder Block zählt."
+    - "<gold>1 Level = 1 Block.</gold> <gray>Rechne gut."
+    - "<gray>Von <white>1x1</white> bis zum <light_purple>Enderdrachen</light_purple>."
+    - "<aqua>Schleichen. Drücken. <green>Wachsen."
+    - "<gray>Platzangst? <red>Falscher Server."
+    - "<yellow>Level farmen, Welt kaufen."
+    - "<gray>Die Border ist <red>rot</red>. Dein Kopf gleich auch."
+    - "<gray>Hier ist jeder Quadratmeter <gold>hart erarbeitet</gold>."

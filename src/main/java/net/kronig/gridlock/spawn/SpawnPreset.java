@@ -1,0 +1,120 @@
+package net.kronig.gridlock.spawn;
+
+import org.bukkit.Material;
+import org.bukkit.block.Biome;
+
+import java.util.List;
+
+public enum SpawnPreset {
+    RANDOM("Zufall", Material.ENDER_EYE, Difficulty.UNKNOWN,
+            "Irgendwo an Land. Kann ein Wald sein – oder eine Wüste. Lass dich überraschen.", List.of(), false),
+    TREE("Neben einem Baum", Material.OAK_SAPLING, Difficulty.EASY,
+            "Du startest direkt neben einem Baum. Holz ist sofort da, der perfekte Einstieg.",
+            List.of(Biome.FOREST, Biome.BIRCH_FOREST, Biome.FLOWER_FOREST, Biome.PLAINS, Biome.DARK_FOREST), true),
+    JUNGLE("Dschungel", Material.JUNGLE_SAPLING, Difficulty.EASY,
+            "Riesige Bäume, Melonen und Kakao. Viel Holz, aber unübersichtlich.",
+            List.of(Biome.JUNGLE, Biome.SPARSE_JUNGLE, Biome.BAMBOO_JUNGLE), true),
+    CHERRY("Kirschblütenhain", Material.CHERRY_SAPLING, Difficulty.EASY,
+            "Hübsch, ruhig, mit Bäumen. Liegt oft in den Bergen.",
+            List.of(Biome.CHERRY_GROVE), true),
+    TAIGA("Taiga", Material.SPRUCE_SAPLING, Difficulty.MEDIUM,
+            "Fichtenwald mit Beeren und Wölfen. Kalt, aber machbar.",
+            List.of(Biome.TAIGA, Biome.SNOWY_TAIGA, Biome.OLD_GROWTH_SPRUCE_TAIGA, Biome.OLD_GROWTH_PINE_TAIGA), true),
+    PLAINS("Ebene", Material.SHORT_GRASS, Difficulty.MEDIUM,
+            "Offenes Grasland. Bäume sind selten – der erste Stamm kann teuer werden.",
+            List.of(Biome.PLAINS, Biome.SUNFLOWER_PLAINS), false),
+    SWAMP("Sumpf", Material.LILY_PAD, Difficulty.MEDIUM,
+            "Wasser, Schleim und Hexen. Nicht jeder Block ist trocken.",
+            List.of(Biome.SWAMP, Biome.MANGROVE_SWAMP), false),
+    DESERT("Wüste", Material.SAND, Difficulty.HARD,
+            "Sand, Kakteen, tote Büsche. Kein Holz weit und breit.",
+            List.of(Biome.DESERT), false),
+    SNOW("Schneeebene", Material.SNOW_BLOCK, Difficulty.HARD,
+            "Eisig und leer. Nahrung und Holz sind Mangelware.",
+            List.of(Biome.SNOWY_PLAINS), false),
+    BADLANDS("Tafelberge", Material.RED_SAND, Difficulty.HARD,
+            "Terrakotta und Gold, aber kaum Leben.",
+            List.of(Biome.BADLANDS, Biome.ERODED_BADLANDS, Biome.WOODED_BADLANDS), false),
+    PEAKS("Berggipfel", Material.STONE, Difficulty.EXTREME,
+            "Ganz oben auf einem Berg. Jeder Schritt kann der letzte sein.",
+            List.of(Biome.STONY_PEAKS, Biome.JAGGED_PEAKS, Biome.FROZEN_PEAKS), false),
+    MUSHROOM("Pilzinsel", Material.RED_MUSHROOM_BLOCK, Difficulty.EXTREME,
+            "Keine Monster, aber mitten im Ozean. Viel Glück mit Holz und Erzen.",
+            List.of(Biome.MUSHROOM_FIELDS), false);
+
+    public enum Difficulty {
+        EASY("Leicht", "#55ff55", 1),
+        MEDIUM("Mittel", "#ffff55", 2),
+        HARD("Schwer", "#ffaa00", 3),
+        EXTREME("Extrem", "#ff3b3b", 4),
+        UNKNOWN("Überraschung", "#ff55ff", 0);
+
+        private final String displayName;
+        private final String color;
+        private final int stars;
+
+        Difficulty(String displayName, String color, int stars) {
+            this.displayName = displayName;
+            this.color = color;
+            this.stars = stars;
+        }
+
+        public String format() {
+            String starText = stars == 0 ? "? ? ? ?" : "★".repeat(stars) + "☆".repeat(4 - stars);
+            return "<" + color + ">" + starText + " " + displayName + "</" + color + ">";
+        }
+    }
+
+    private final String displayName;
+    private final Material icon;
+    private final Difficulty difficulty;
+    private final String description;
+    private final List<Biome> biomes;
+    private final boolean nextToTree;
+
+    SpawnPreset(String displayName, Material icon, Difficulty difficulty, String description, List<Biome> biomes,
+                boolean nextToTree) {
+        this.displayName = displayName;
+        this.icon = icon;
+        this.difficulty = difficulty;
+        this.description = description;
+        this.biomes = biomes;
+        this.nextToTree = nextToTree;
+    }
+
+    public String displayName() {
+        return displayName;
+    }
+
+    public Material icon() {
+        return icon;
+    }
+
+    public Difficulty difficulty() {
+        return difficulty;
+    }
+
+    public String description() {
+        return description;
+    }
+
+    public List<Biome> biomes() {
+        return biomes;
+    }
+
+    public boolean nextToTree() {
+        return nextToTree;
+    }
+
+    public static SpawnPreset parse(String name) {
+        if (name == null) {
+            return null;
+        }
+        for (SpawnPreset preset : values()) {
+            if (preset.name().equalsIgnoreCase(name) || preset.displayName.equalsIgnoreCase(name)) {
+                return preset;
+            }
+        }
+        return null;
+    }
+}

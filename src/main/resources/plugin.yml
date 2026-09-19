@@ -1,0 +1,12 @@
+name: GridLock
+version: '${version}'
+main: net.kronig.gridlock.GridLockPlugin
+api-version: '26.3'
+description: 1x1-Challenge – erweitere dein Feld Block für Block mit Leveln.
+author: Niklas Kronig
+website: https://kronig.net
+
+permissions:
+  gridlock.admin:
+    description: Challenge starten/zurücksetzen, Einstellungen ändern, Timer steuern
+    default: op
