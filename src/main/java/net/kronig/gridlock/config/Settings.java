@@ -90,6 +90,9 @@ public final class Settings {
             "Wechsel alle", "Wie oft die zweite MOTD-Zeile wechselt.", 5, 2, 60, "s"));
     public static final Setting MOTD_HOVER = register(Setting.bool("motd.hover-stats", Category.MOTD, Material.PLAYER_HEAD,
             "Hover-Infos", "Beim Drüberfahren über die Spielerzahl erscheinen Stats statt Spielernamen.", true));
+    public static final Setting MOTD_ICON = register(Setting.bool("motd.server-icon", Category.MOTD, Material.ITEM_FRAME,
+            "Server-Icon", "Zeigt das GridLock-Icon in der Serverliste. Eigenes Bild: plugins/GridLock/server-icon.png ersetzen und /gl reload.",
+            true));
 
     private final JavaPlugin plugin;
 

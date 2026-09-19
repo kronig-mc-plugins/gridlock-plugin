@@ -64,6 +64,9 @@ motd:
   show-stats: true
   interval-seconds: 5
   hover-stats: true
+  # Icon in der Serverliste. Eigenes Bild: plugins/GridLock/server-icon.png ersetzen
+  # (wird automatisch auf 64x64 skaliert) und /gl reload
+  server-icon: true
   # Wechselnde Sprüche in Zeile 2 (MiniMessage-Format: https://docs.advntr.dev/minimessage/format)
   slogans:
     - "<gray>Jeder Block kostet. <red>Jeder Block zählt."

@@ -58,8 +58,9 @@ public final class GridLockCommand implements BasicCommand {
             case "reset" -> reset(sender, args);
             case "reload" -> {
                 plugin.settings().load();
+                plugin.motd().reloadIcon();
                 plugin.onSettingsChanged();
-                sender.sendMessage(Text.prefixed("<green>config.yml neu geladen."));
+                sender.sendMessage(Text.prefixed("<green>config.yml und Server-Icon neu geladen."));
             }
             case "unlock" -> ifPlayer(sender, player -> {
                 boolean added = plugin.fields().unlock(player.getWorld(),

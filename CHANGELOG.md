@@ -2,6 +2,14 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.1.0] – 2026-09-19
+
+### Hinzugefügt
+- **Server-Icon** direkt aus dem Plugin: Das GridLock-Icon erscheint in der Serverliste, ohne `server-icon.png` im Server-Ordner.
+- Eigenes Icon über `plugins/GridLock/server-icon.png`. Beliebige Größen werden automatisch auf 64×64 skaliert, `/gl reload` lädt es neu.
+- Neue Einstellung `motd.server-icon` (GUI → MOTD → Server-Icon).
+- **Logo** (Grasblock in roter Border, transparenter Hintergrund) als Server-Icon und in der README.
+
 ## [1.0.0] – 2026-09-19
 
 Erste Version für **Paper 26.3** (Java 25).

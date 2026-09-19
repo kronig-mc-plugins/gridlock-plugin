@@ -1,4 +1,6 @@
-# GridLock
+<p align="center"><img src="docs/logo.png" alt="GridLock Logo" width="200"></p>
+
+<h1 align="center">GridLock</h1>
 
 Multiplayer-Challenge für **Paper 26.3**: Alle starten gemeinsam auf einem **1x1-Feld**, umgeben von einer roten Border.
 Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. Ziel: Enderdrache.
@@ -51,7 +53,12 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 - **Tod**: Normal / Hardcore
 - **Border**: Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
 - **Spawn**: Suchradius
-- **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
+- **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
+
+## Server-Icon
+
+Das Plugin bringt ein eigenes Icon für die Serverliste mit, eine `server-icon.png` im Server-Ordner ist nicht nötig.
+Eigenes Icon: `plugins/GridLock/server-icon.png` ersetzen (beliebige Größe, wird auf 64×64 skaliert) und `/gl reload`.
 
 ## Server-Anforderungen
 

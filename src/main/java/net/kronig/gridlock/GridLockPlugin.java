@@ -45,6 +45,7 @@ public final class GridLockPlugin extends JavaPlugin {
     private GameController game;
     private TimerManager timer;
     private SidebarManager sidebar;
+    private MotdManager motd;
 
     @Override
     public void onLoad() {
@@ -85,6 +86,7 @@ public final class GridLockPlugin extends JavaPlugin {
         game = new GameController(this);
         timer = new TimerManager(this);
         sidebar = new SidebarManager(this);
+        motd = new MotdManager(this);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new GuiListener(), this);
@@ -92,7 +94,7 @@ public final class GridLockPlugin extends JavaPlugin {
         pm.registerEvents(levels, this);
         pm.registerEvents(borderListener, this);
         pm.registerEvents(game, this);
-        pm.registerEvents(new MotdManager(this), this);
+        pm.registerEvents(motd, this);
 
         registerCommand("gridlock", "GridLock-Menü, Einstellungen und Verwaltung", List.of("gl", "grid"),
                 new GridLockCommand(this));
@@ -152,6 +154,10 @@ public final class GridLockPlugin extends JavaPlugin {
         borderListener.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
+    }
+
+    public MotdManager motd() {
+        return motd;
     }
 
     public Settings settings() {
