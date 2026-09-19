@@ -29,6 +29,7 @@ public final class SidebarManager {
 
     private static final int MAX_LINES = 15;
     private static final String OBJECTIVE = "gridlock";
+    private static final DisplaySlot[] MIRRORED_SLOTS = {DisplaySlot.PLAYER_LIST, DisplaySlot.BELOW_NAME};
 
     private final GridLockPlugin plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
@@ -49,6 +50,41 @@ public final class SidebarManager {
                 player.setScoreboard(board);
             }
             render(board, lines(player));
+            mirrorMainScoreboard(board);
+        }
+    }
+
+    /**
+     * Players see their own scoreboard, so objectives an admin put on the server's main scoreboard (e.g. a death
+     * counter in the tab list) would be invisible. Copy whatever is shown in the list / below the name.
+     */
+    private static void mirrorMainScoreboard(Scoreboard board) {
+        Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
+        for (DisplaySlot slot : MIRRORED_SLOTS) {
+            String name = "gl_mirror_" + slot.name().toLowerCase(java.util.Locale.ROOT);
+            Objective source = main.getObjective(slot);
+            Objective copy = board.getObjective(name);
+            if (source == null) {
+                if (copy != null) {
+                    copy.unregister();
+                }
+                continue;
+            }
+            if (copy == null) {
+                copy = board.registerNewObjective(name, Criteria.DUMMY, source.displayName(), source.getRenderType());
+                copy.setDisplaySlot(slot);
+            } else {
+                copy.displayName(source.displayName());
+                if (copy.getRenderType() != source.getRenderType()) {
+                    copy.setRenderType(source.getRenderType());
+                }
+            }
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                int value = source.getScore(online.getName()).getScore();
+                if (copy.getScore(online.getName()).getScore() != value || !copy.getScore(online.getName()).isScoreSet()) {
+                    copy.getScore(online.getName()).setScore(value);
+                }
+            }
         }
     }
 

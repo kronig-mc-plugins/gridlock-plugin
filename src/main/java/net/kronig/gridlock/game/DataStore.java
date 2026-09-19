@@ -33,7 +33,15 @@ public final class DataStore {
             GameData data = GSON.fromJson(reader, GameData.class);
             return data != null ? data : new GameData();
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "data.json konnte nicht gelesen werden, starte mit leeren Daten", e);
+            // Keep the unreadable file: an empty state sends everyone back to the lobby and clears inventories.
+            Path backup = file.resolveSibling("data.json.kaputt-" + System.currentTimeMillis());
+            try {
+                Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ignored) {
+                // the log below still tells the admin what happened
+            }
+            plugin.getLogger().log(Level.SEVERE, "data.json konnte nicht gelesen werden! Die Runde startet leer (Lobby). "
+                    + "Sicherung der alten Datei: " + backup.getFileName(), e);
             return new GameData();
         }
     }

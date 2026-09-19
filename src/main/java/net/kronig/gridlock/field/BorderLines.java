@@ -144,6 +144,7 @@ public final class BorderLines {
         int cx = center.getBlockX() >> 4;
         int cz = center.getBlockZ() >> 4;
         int refY = center.getBlockY();
+        boolean ceiling = world.hasCeiling(); // Nether: the "surface" is the bedrock roof, keep it at player height
         for (int x = (cx - chunkRadius) << 4; x < (cx + chunkRadius + 1) << 4; x++) {
             for (int z = (cz - chunkRadius) << 4; z < (cz + chunkRadius + 1) << 4; z++) {
                 if (!fields.isAllowed(world, x, z)) {
@@ -170,11 +171,20 @@ public final class BorderLines {
                     int along = alongZ ? z : x;
                     int low = inner + 1;
                     int high = Math.max(inner, outer) + 1;
+                    if (!ceiling) {
+                        // Down in a hole the wall still reaches the surface, so it is visible from above as well.
+                        int top = Math.max(surface(world, x, z), surface(world, x + dx, z + dz)) + 1;
+                        high = Math.max(high, top);
+                    }
                     edges.put(List.of(alongZ ? 1 : 0, plane, along, fieldSide),
                             new Edge(alongZ, plane, fieldSide, along, low, high));
                 }
             }
         }
+    }
+
+    private static int surface(World world, int x, int z) {
+        return world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
     }
 
     /** Highest solid block at or below {@code fromY}; falls back to the surface above ground. */

@@ -2,6 +2,15 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.6.1] – 2026-09-20
+
+### Behoben
+- **Eigene Scoreboards in Tab-Liste und unter dem Namen wurden nicht angezeigt** (z. B. ein Death-Counter per `/scoreboard objectives setdisplay list deaths`). Ursache: Jeder Spieler hat wegen des GridLock-Fensters ein eigenes Scoreboard. Die Anzeigen des Server-Scoreboards werden jetzt dorthin gespiegelt.
+- Ist die `data.json` unlesbar, wird sie jetzt als `data.json.kaputt-…` gesichert und der Fehler deutlich geloggt, statt die Runde stillschweigend auf „Lobby“ zurückzusetzen (wodurch Inventare geleert würden).
+
+### Geändert
+- Die Border-Wand reicht in der Oberwelt und im End jetzt **immer bis zur Oberfläche**. Wer unten in einem Loch steht, sieht die Wand bis ganz nach oben, und von oben erkennt man am Lochrand, wo die Border verläuft. Im Nether bleibt sie auf Spielerhöhe, weil die „Oberfläche“ dort die Bedrock-Decke ist.
+
 ## [1.6.0] – 2026-09-20
 
 ### Hinzugefügt
