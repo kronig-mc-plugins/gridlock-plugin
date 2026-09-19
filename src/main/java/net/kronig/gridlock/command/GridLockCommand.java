@@ -31,10 +31,10 @@ import java.util.stream.Stream;
 public final class GridLockCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "menu", "settings", "config", "spawn", "vote", "info", "pay", "scoreboard", "help",
-            "start", "reset", "reload", "level", "playtime", "unlock", "lock");
+            "menu", "settings", "config", "spawn", "vote", "ready", "info", "pay", "scoreboard", "help",
+            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock");
     private static final List<String> ADMIN_SUBCOMMANDS = List.of(
-            "start", "reset", "reload", "level", "playtime", "unlock", "lock");
+            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock");
     private static final int MAX_FIELD_RADIUS = 25;
 
     private final GridLockPlugin plugin;
@@ -62,7 +62,14 @@ public final class GridLockCommand implements BasicCommand {
             case "scoreboard", "sb" -> ifPlayer(sender, this::toggleScoreboard);
             case "level" -> level(sender, args);
             case "playtime", "spielzeit" -> playtime(sender, args);
-            case "start" -> plugin.game().start(sender);
+            case "ready", "bereit", "start" -> {
+                if (sender instanceof Player player) {
+                    plugin.game().toggleReady(player);
+                } else {
+                    plugin.game().forceStart(sender); // console cannot be "ready"
+                }
+            }
+            case "forcestart" -> plugin.game().forceStart(sender);
             case "reset" -> reset(sender, args);
             case "reload" -> {
                 plugin.settings().load();
@@ -337,13 +344,14 @@ public final class GridLockCommand implements BasicCommand {
         sender.sendMessage(Text.mm("<gray>/gl settings [kategorie] <dark_gray>– Einstellungs-GUI"));
         sender.sendMessage(Text.mm("<gray>/gl config [key] [wert] <dark_gray>– Einstellung lesen/ändern"));
         sender.sendMessage(Text.mm("<gray>/gl spawn | vote [spawn] <dark_gray>– Spawn-Abstimmung"));
+        sender.sendMessage(Text.mm("<gray>/gl ready <dark_gray>– bereit / nicht bereit (Start, wenn alle bereit sind)"));
         sender.sendMessage(Text.mm("<gray>/gl info <dark_gray>– Feld & Timer"));
         sender.sendMessage(Text.mm("<gray>/gl pay [spieler] [level] <dark_gray>– Level überweisen (Modus Überweisen)"));
         sender.sendMessage(Text.mm("<gray>/gl scoreboard <dark_gray>– eigenes Scoreboard an/aus"));
         sender.sendMessage(Text.mm("<gray>/timer <dark_gray>– Zeit anzeigen"));
         if (isAdmin(sender)) {
             sender.sendMessage(Text.mm("<gold>Admin:"));
-            sender.sendMessage(Text.mm("<gray>/gl start | reset | reload"));
+            sender.sendMessage(Text.mm("<gray>/gl forcestart | reset | reload"));
             sender.sendMessage(Text.mm("<gray>/gl level [spieler|pool|alle] [set|add|remove] [n]"));
             sender.sendMessage(Text.mm("<gray>/gl playtime [spieler] [set|add|remove] [zeit]"));
             sender.sendMessage(Text.mm("<gray>/gl unlock | lock [radius] <dark_gray>– Feld unter dir"));

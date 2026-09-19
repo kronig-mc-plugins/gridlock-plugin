@@ -4,13 +4,10 @@ import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kronig.gridlock.GridLockPlugin;
 import net.kronig.gridlock.config.Settings;
 import net.kronig.gridlock.util.Text;
-import org.bukkit.Axis;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.Orientable;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -167,7 +164,7 @@ public final class BorderListener implements Listener {
         return true;
     }
 
-    /** A portal always opens a new 1x1 field where it drops the player (plus the portal itself). */
+    /** A portal always opens a new field where it drops the player (nether portals: portal + one block around). */
     private void handleArrival(Player player) {
         TeleportCause cause = pendingCause.remove(player.getUniqueId());
         pendingSince.remove(player.getUniqueId());
@@ -186,20 +183,25 @@ public final class BorderListener implements Listener {
         Set<Long> columns = new LinkedHashSet<>();
         columns.add(FieldManager.pack(location.getBlockX(), location.getBlockZ()));
         if (cause == TeleportCause.NETHER_PORTAL) {
-            for (int x = -2; x <= 2; x++) {
-                for (int y = -3; y <= 3; y++) {
-                    for (int z = -2; z <= 2; z++) {
+            // The whole portal plus a ring of one block around it, so you can step out and back in.
+            Set<Long> portal = new LinkedHashSet<>();
+            for (int x = -4; x <= 4; x++) {
+                for (int y = -4; y <= 4; y++) {
+                    for (int z = -4; z <= 4; z++) {
                         if (location.clone().add(x, y, z).getBlock().getType() == Material.NETHER_PORTAL) {
-                            columns.add(FieldManager.pack(location.getBlockX() + x, location.getBlockZ() + z));
+                            portal.add(FieldManager.pack(location.getBlockX() + x, location.getBlockZ() + z));
                         }
                     }
                 }
             }
-        }
-        if (cause == TeleportCause.NETHER_PORTAL) {
-            long front = portalFront(location);
-            if (front != Long.MIN_VALUE) {
-                columns.add(front);
+            for (long column : portal) {
+                int px = FieldManager.unpackX(column);
+                int pz = FieldManager.unpackZ(column);
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        columns.add(FieldManager.pack(px + dx, pz + dz));
+                    }
+                }
             }
         }
         boolean firstInWorld = fields.size(world) == 0;
@@ -210,31 +212,6 @@ public final class BorderListener implements Listener {
         Bukkit.broadcast(Text.prefixed((firstInWorld ? "<light_purple>Neue Dimension!</light_purple> " : "")
                 + "<gray>Portal-Feld im <white>" + dimension + "</white> bei <white>" + location.getBlockX() + ", "
                 + location.getBlockZ() + "</white> freigeschaltet <dark_gray>(" + columns.size() + " Blöcke)"));
-    }
-
-    /**
-     * One column right in front of the portal, so the player can step out and walk back in without levels.
-     * Prefers the side with solid ground; falls back to the side the player is facing.
-     */
-    private static long portalFront(Location location) {
-        Block feet = location.getBlock();
-        Block portal = feet.getType() == Material.NETHER_PORTAL ? feet : feet.getRelative(0, 1, 0);
-        if (portal.getType() != Material.NETHER_PORTAL || !(portal.getBlockData() instanceof Orientable orientable)) {
-            return Long.MIN_VALUE;
-        }
-        // Portal along X → step out along Z, and vice versa.
-        boolean alongX = orientable.getAxis() == Axis.X;
-        int[][] sides = alongX ? new int[][]{{0, 1}, {0, -1}} : new int[][]{{1, 0}, {-1, 0}};
-        for (int[] side : sides) {
-            Block candidate = feet.getRelative(side[0], 0, side[1]);
-            if (FieldManager.isSafe(candidate)) {
-                return FieldManager.pack(candidate.getX(), candidate.getZ());
-            }
-        }
-        double yaw = Math.toRadians(location.getYaw());
-        double facing = alongX ? Math.cos(yaw) : -Math.sin(yaw);
-        int[] side = facing >= 0 ? sides[0] : sides[1];
-        return FieldManager.pack(feet.getX() + side[0], feet.getZ() + side[1]);
     }
 
     // ------------------------------------------------------------------ vehicles & mobs

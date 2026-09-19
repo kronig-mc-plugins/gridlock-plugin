@@ -34,6 +34,9 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -45,6 +48,8 @@ public final class GameController implements Listener {
 
     private final GridLockPlugin plugin;
     private final SpawnFinder spawnFinder;
+    /** Players in the lobby who pressed "ready". The round starts once everyone online is ready. */
+    private final Set<UUID> ready = new HashSet<>();
 
     public GameController(GridLockPlugin plugin) {
         this.plugin = plugin;
@@ -112,17 +117,71 @@ public final class GameController implements Listener {
         return leaders;
     }
 
+    // ------------------------------------------------------------------ ready check
+
+    public boolean isReady(Player player) {
+        return ready.contains(player.getUniqueId());
+    }
+
+    public int readyCount() {
+        int count = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (ready.contains(player.getUniqueId())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public void toggleReady(Player player) {
+        if (data().state != GameState.LOBBY) {
+            player.sendMessage(Text.prefixed("<gray>Die Runde läuft schon."));
+            return;
+        }
+        boolean nowReady = ready.add(player.getUniqueId());
+        if (!nowReady) {
+            ready.remove(player.getUniqueId());
+        }
+        int online = Bukkit.getOnlinePlayers().size();
+        Bukkit.broadcast(Text.prefixed("<white>" + Text.escape(player.getName()) + "</white> "
+                + (nowReady ? "<green>ist bereit" : "<red>ist doch nicht bereit")
+                + " <dark_gray>(</dark_gray><white>" + readyCount() + "<gray>/<white>" + online + "<dark_gray>)"));
+        player.playSound(player.getLocation(), nowReady ? Sound.BLOCK_NOTE_BLOCK_PLING : Sound.BLOCK_NOTE_BLOCK_BASS,
+                0.8f, nowReady ? 1.6f : 0.8f);
+        plugin.lobby().updateReadyItem(player);
+        checkAllReady();
+    }
+
+    /** Starts the round once every online player is ready (called on toggle and on quit). */
+    private void checkAllReady() {
+        if (data().state != GameState.LOBBY) {
+            return;
+        }
+        int online = Bukkit.getOnlinePlayers().size();
+        if (online > 0 && readyCount() == online) {
+            Bukkit.broadcast(Text.prefixed("<green><bold>Alle sind bereit!</bold></green> <gray>Los geht's …"));
+            begin();
+        }
+    }
+
     // ------------------------------------------------------------------ start
 
-    public void start(CommandSender sender) {
+    /** Admin: start without waiting for everyone to be ready. */
+    public void forceStart(CommandSender sender) {
         if (!sender.hasPermission(GridLockPlugin.ADMIN_PERMISSION)) {
-            sender.sendMessage(Text.prefixed("<red>Nur Admins können die Challenge starten."));
+            sender.sendMessage(Text.prefixed("<red>Nur Admins können den Start erzwingen."));
             return;
         }
         if (data().state != GameState.LOBBY) {
             sender.sendMessage(Text.prefixed("<red>Die Challenge läuft bereits. Neue Runde: <white>/gl reset"));
             return;
         }
+        Bukkit.broadcast(Text.prefixed("<gold>" + Text.escape(sender.getName()) + "</gold> <gray>erzwingt den Start."));
+        begin();
+    }
+
+    private void begin() {
+        ready.clear();
         List<SpawnPreset> leaders = leaders();
         SpawnPreset voted = leaders.get(ThreadLocalRandom.current().nextInt(leaders.size()));
         if (leaders.size() > 1) {
@@ -269,6 +328,9 @@ public final class GameController implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         plugin.forget(event.getPlayer());
+        ready.remove(event.getPlayer().getUniqueId());
+        // The quitter is still counted as online during this event.
+        Bukkit.getScheduler().runTask(plugin, this::checkAllReady);
     }
 
     // ------------------------------------------------------------------ win / lose

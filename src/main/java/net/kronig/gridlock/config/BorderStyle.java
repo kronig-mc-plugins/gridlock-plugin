@@ -1,7 +1,7 @@
 package net.kronig.gridlock.config;
 
 public enum BorderStyle implements Setting.Choice {
-    LINE("Linie am Boden"),
+    LINE("Laser-Vorhang"),
     PARTICLES("Partikel-Wand"),
     BOTH("Beides");
 

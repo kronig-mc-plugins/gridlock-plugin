@@ -91,9 +91,10 @@ public final class SidebarManager {
             lines.add(" <white>" + leader.displayName());
             lines.add(" " + leader.difficulty().format());
             lines.add("<gray>Stimmen: <white>" + data.votes.size() + "<gray>/<white>" + Bukkit.getOnlinePlayers().size());
+            lines.add("<gray>Bereit: <green>" + plugin.game().readyCount() + "<gray>/<white>" + Bukkit.getOnlinePlayers().size());
             lines.add("");
-            lines.add("<gray>Kompass: <white>abstimmen");
-            lines.add("<gray>Menü: <white>/gl");
+            lines.add("<gray>Säule klicken: <white>abstimmen");
+            lines.add("<gray>Grüne Säule: <white>bereit");
         } else {
             World world = player.getWorld();
             String status = switch (data.state) {

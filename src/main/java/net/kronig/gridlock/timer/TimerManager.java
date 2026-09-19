@@ -70,7 +70,8 @@ public final class TimerManager {
             case LOBBY -> {
                 SpawnPreset leader = plugin.game().winningPreset();
                 yield Text.mm("<aqua>Lobby</aqua> <dark_gray>|</dark_gray> <gray>Spawn: <white>" + leader.displayName()
-                        + "</white> <dark_gray>|</dark_gray> <gray>Kompass = abstimmen");
+                        + "</white> <dark_gray>|</dark_gray> <gray>Bereit: <green>" + plugin.game().readyCount()
+                        + "<gray>/<white>" + Bukkit.getOnlinePlayers().size());
             }
             case STARTING -> Text.mm("<yellow>Die Challenge startet…");
             case RUNNING -> data.timerPaused

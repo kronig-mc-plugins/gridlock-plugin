@@ -66,11 +66,8 @@ public final class Settings {
 
     // Border
     public static final Setting BORDER_STYLE = register(Setting.choice("border.style", Category.BORDER, Material.PAINTING,
-            "Darstellung", "Linie am Boden: durchgehende, leuchtende Linie auf dem Boden. Partikel-Wand: rote Partikel an den Kanten.",
+            "Darstellung", "Laser-Vorhang: leuchtender Schimmer über dem Boden mit dünnen Linien am Gelände. Partikel-Wand: rote Partikel an den Kanten.",
             BorderStyle.LINE));
-    public static final Setting BORDER_SOLID = register(Setting.bool("border.solid", Category.BORDER, Material.BARRIER,
-            "Feste Wand", "Man läuft wie gegen eine unsichtbare Wand, ohne zurückteleportiert zu werden (unsichtbare Barrieren nur für den Spieler).",
-            true));
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
             "Farbe", "Farbe der Border (Linie und Partikel).", BorderColor.RED));
     public static final Setting BORDER_VIEW = register(Setting.integer("border.view-distance", Category.BORDER, Material.SPYGLASS,

@@ -7,13 +7,13 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
 
 ## Ablauf
 
-1. **Lobby**: Beim Joinen landet man in einer leeren Void-Welt auf einer Plattform.
-   - Kompass → **Spawn-Abstimmung** (Normaler Worldspawn, Neben Baum, Dschungel, Wüste, Pilzinsel … mit Schwierigkeit ★☆☆☆ bis ★★★★; „Zufall“ lost einen davon aus)
+1. **Lobby**: Beim Joinen landet man auf einer schwebenden Insel mit rotem Leuchtraster und rotierendem Logo.
+   - **Säulen im Kreis** (oder Kompass) → **Spawn-Abstimmung** (Normaler Worldspawn, Neben Baum, Dschungel, Wüste, Pilzinsel … mit Schwierigkeit ★☆☆☆ bis ★★★★; „Zufall“ lost einen davon aus)
+   - **Grüne Säule** (oder Farbstoff in Slot 9 / `/gl ready`) → **bereit**. Sobald alle online Spieler bereit sind, startet die Challenge. Admins: `/gl forcestart`
    - Comparator → **Menü & Einstellungen**
-   - Grüner Farbstoff (nur Admins) → **Challenge starten**
 2. **Start**: Der Spawn mit den meisten Stimmen wird gesucht (Gleichstand = Zufall, keine Stimmen = Zufall), danach 5-Sekunden-Countdown und alle werden auf das 1x1 teleportiert.
-3. **Spielen**: Die Border ist eine durchgehende rote Linie am Boden und fühlt sich an wie eine Wand, man läuft einfach dagegen.
-   Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, Linie wird orange → gelb → grün) → Block frei, Level weg.
+3. **Spielen**: Die Border ist ein leuchtender roter Vorhang mit dünnen Linien am Gelände. Der Server hält dich an der Kante fest.
+   Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, die ganze Border wird orange → gelb → grün) → Block frei, Level weg, kurzer grüner Blitz.
    Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht. Die Border gilt für alle außer Zuschauer (auch im Kreativmodus).
    Fahrzeuge (Minecart, Boot, Pferd) fahren an der Border ohne dich weiter, du bleibst im Feld.
 4. **Ende**: Enderdrache tot → gewonnen (Timer stoppt). Im Hardcore-Modus: einer stirbt → verloren.
@@ -24,7 +24,7 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
 | Dimension | Regel |
 |---|---|
 | Oberwelt | Startet mit dem 1x1 am Spawn |
-| Nether | Eigenes Feld. Beim Durchgehen eines Portals werden Ankunftsblock, Portal und ein Block davor automatisch freigeschaltet |
+| Nether | Eigenes Feld. Beim Durchgehen eines Portals werden Portal und ein Ring von einem Block drumherum automatisch freigeschaltet |
 | End | **Keine Border** auf der Drachen-Insel (Radius einstellbar, Standard 200). Im äußeren End gilt wieder die Border; End-Gateways schalten den Ankunftsblock frei |
 
 Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
@@ -37,6 +37,7 @@ Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
 | `/gl settings [kategorie]` | alle (ändern: Admin) | Einstellungs-GUI |
 | `/gl config [key] [wert]` | alle (ändern: Admin) | Einstellungen per Befehl, mit Tab-Vervollständigung |
 | `/gl spawn`, `/gl vote [spawn]` | alle | Spawn-Abstimmung |
+| `/gl ready` | alle | Bereit / nicht bereit (Start, wenn alle bereit sind) |
 | `/gl info` | alle | Feldgrößen, Kosten, Timer |
 | `/gl pay [spieler] [level]` | alle | Level überweisen (Modus „Überweisen“, ohne Argumente: Menü) |
 | `/gl scoreboard` | alle | Eigenes Scoreboard an/aus |
@@ -45,7 +46,7 @@ Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
 | `/gl level [spieler\|pool\|alle] [set\|add\|remove] [n]` | Admin | Level anpassen |
 | `/gl playtime [spieler] [set\|add\|remove] [zeit]` | Admin | Spielzeit anpassen |
 | `/gl unlock\|lock [radius]` | Admin | Feld-Blöcke um dich freischalten/sperren |
-| `/gl start` · `/gl reset` · `/gl reload` | Admin | Runde starten, neue Runde, Config neu laden |
+| `/gl forcestart` · `/gl reset` · `/gl reload` | Admin | Start erzwingen, neue Runde, Config neu laden |
 
 Aliase: `/gridlock`, `/gl`, `/grid`. Permission: `gridlock.admin` (Standard: OP).
 
@@ -58,7 +59,7 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 - **Timer**: Actionbar, Scoreboard, läuft ohne Spieler
 - **Dimensionen**: Kosten-Multiplikator Nether/End, Radius der freien Drachen-Insel
 - **Tod**: Normal / Hardcore
-- **Border**: Darstellung (Linie am Boden / Partikel-Wand / beides), feste Wand an/aus, Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
+- **Border**: Darstellung (Laser-Vorhang / Partikel-Wand / beides), Farbe, Sichtweite, Partikeldichte, Monster dürfen ins Feld
 - **Spawn**: Suchradius
 - **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
 

@@ -88,15 +88,22 @@ public final class SpawnMenu extends Gui {
             });
         }
         set(40, ItemBuilder.of(Material.BARRIER).name("<red>Schließen").build(), type -> viewer.closeInventory());
-        if (voting && viewer.hasPermission(GridLockPlugin.ADMIN_PERMISSION)) {
-            set(44, ItemBuilder.of(Material.LIME_CONCRETE).glow(true)
-                    .name("<green><bold>Challenge starten")
-                    .lore("<gray>Spawn: <white>" + leader.displayName())
+        if (voting) {
+            boolean ready = plugin.game().isReady(viewer);
+            set(44, ItemBuilder.of(ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE).glow(ready)
+                    .name(ready ? "<green><bold>Bereit ✔" : "<yellow><bold>Bereit machen")
+                    .lore("<gray>Bereit: <white>" + plugin.game().readyCount() + "<gray>/<white>" + Bukkit.getOnlinePlayers().size())
+                    .lore("<gray>Spawn-Favorit: <white>" + leader.displayName())
                     .lore("")
-                    .lore("<yellow>▶ Klick zum Starten")
+                    .lore("<yellow>▶ Klick zum Umschalten")
                     .build(), type -> {
-                viewer.closeInventory();
-                plugin.game().start(viewer);
+                click();
+                plugin.game().toggleReady(viewer);
+                if (plugin.data().state == GameState.LOBBY) {
+                    refresh();
+                } else {
+                    viewer.closeInventory();
+                }
             });
         }
     }

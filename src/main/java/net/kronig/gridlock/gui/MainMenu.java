@@ -106,18 +106,37 @@ public final class MainMenu extends Gui {
                 .lore("<gray>/gl help <dark_gray>– alle Befehle (inkl. Admin)")
                 .build());
 
+        if (data.state == GameState.LOBBY) {
+            boolean ready = plugin.game().isReady(viewer);
+            set(51, ItemBuilder.of(ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE).glow(ready)
+                    .name(ready ? "<green><bold>Bereit ✔" : "<yellow><bold>Bereit machen")
+                    .description("Die Challenge startet, sobald alle online Spieler bereit sind.")
+                    .lore("")
+                    .lore("<gray>Bereit: <white>" + plugin.game().readyCount() + "<gray>/<white>" + Bukkit.getOnlinePlayers().size())
+                    .lore("<yellow>▶ Klick zum Umschalten")
+                    .build(), type -> {
+                click();
+                plugin.game().toggleReady(viewer);
+                if (plugin.data().state == GameState.LOBBY) {
+                    refresh();
+                } else {
+                    viewer.closeInventory();
+                }
+            });
+        }
+
         if (!admin) {
             return;
         }
         switch (data.state) {
-            case LOBBY -> set(51, ItemBuilder.of(Material.LIME_CONCRETE).glow(true)
-                    .name("<green><bold>Challenge starten")
-                    .description("Sucht den Spawn mit den meisten Stimmen und startet den Countdown für alle.")
+            case LOBBY -> set(47, ItemBuilder.of(Material.NETHER_STAR).glow(true)
+                    .name("<gold><bold>Start erzwingen")
+                    .description("Startet sofort, ohne dass alle bereit sein müssen.")
                     .lore("")
                     .lore("<yellow>▶ Klick zum Starten")
                     .build(), type -> {
                 viewer.closeInventory();
-                plugin.game().start(viewer);
+                plugin.game().forceStart(viewer);
             });
             case STARTING -> set(51, ItemBuilder.of(Material.YELLOW_CONCRETE)
                     .name("<yellow><bold>Startet gerade…").build());

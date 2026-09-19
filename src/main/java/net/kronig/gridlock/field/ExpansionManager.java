@@ -109,8 +109,8 @@ public final class ExpansionManager {
     }
 
     /**
-     * With the solid border the client never walks into a locked column, so pushing is detected from the
-     * movement keys: touching an edge while the keys point into the locked neighbour counts as pushing.
+     * Pushing is detected from the movement keys: touching an edge while the keys point into the locked
+     * neighbour counts as pushing, no matter whether the server had to stop the player this tick.
      */
     private void detectInputPushes() {
         for (Player player : Bukkit.getOnlinePlayers()) {

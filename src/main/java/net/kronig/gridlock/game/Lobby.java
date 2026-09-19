@@ -11,7 +11,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,6 +23,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.ItemStack;
@@ -36,15 +36,25 @@ import java.util.Random;
 public final class Lobby implements Listener {
 
     public static final String WORLD_NAME = "gridlock_lobby";
-    private static final int PLATFORM_Y = 100;
+    private static final int PLATFORM_Y = LobbyBuilder.TOP;
+    /** Bump to rebuild the lobby on existing servers. */
+    private static final int LOBBY_VERSION = 2;
 
     private final GridLockPlugin plugin;
     private final NamespacedKey itemKey;
+    private final NamespacedKey versionKey;
+    private final LobbyShowcase showcase;
     private World world;
 
     public Lobby(GridLockPlugin plugin) {
         this.plugin = plugin;
         this.itemKey = new NamespacedKey(plugin, "lobby_item");
+        this.versionKey = new NamespacedKey(plugin, "lobby_version");
+        this.showcase = new LobbyShowcase(plugin);
+    }
+
+    public LobbyShowcase showcase() {
+        return showcase;
     }
 
     public void load() {
@@ -60,49 +70,36 @@ public final class Lobby implements Listener {
         world.setGameRule(GameRules.ADVANCE_WEATHER, false);
         world.setGameRule(GameRules.SPAWN_MOBS, false);
         world.setGameRule(GameRules.SHOW_ADVANCEMENT_MESSAGES, false);
-        world.setTime(6000);
+        world.setTime(18000); // night: the red grid glows best in the dark
         world.setStorm(false);
         world.setSpawnLocation(spawn());
-        buildPlatform();
+        Integer built = world.getPersistentDataContainer().get(versionKey, PersistentDataType.INTEGER);
+        if (built == null || built < LOBBY_VERSION) {
+            plugin.getLogger().info("Baue die Lobby …");
+            new LobbyBuilder(world).build();
+            buildStations();
+            world.getPersistentDataContainer().set(versionKey, PersistentDataType.INTEGER, LOBBY_VERSION);
+        }
+        showcase.spawn(world);
+    }
+
+    /** Pillars for the vote stations (index 0 = green ready pillar). */
+    private void buildStations() {
+        for (int i = 0; i < LobbyShowcase.stationCount(); i++) {
+            int[] pos = LobbyShowcase.stationPosition(i);
+            world.getBlockAt(pos[0], PLATFORM_Y + 1, pos[1]).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
+            world.getBlockAt(pos[0], PLATFORM_Y + 2, pos[1])
+                    .setType(i == 0 ? Material.EMERALD_BLOCK : Material.CHISELED_POLISHED_BLACKSTONE, false);
+        }
     }
 
     public World world() {
         return world;
     }
 
+    /** In front of the logo, looking at it and at the green ready pillar behind it. */
     public Location spawn() {
-        return new Location(world, 0.5, PLATFORM_Y + 1, 0.5, 0f, 0f);
-    }
-
-    private void buildPlatform() {
-        if (world.getBlockAt(0, PLATFORM_Y, 0).getType() != Material.AIR) {
-            return;
-        }
-        for (int x = -7; x <= 7; x++) {
-            for (int z = -7; z <= 7; z++) {
-                double distance = Math.sqrt(x * x + z * z);
-                if (distance > 7.3) {
-                    continue;
-                }
-                Material material;
-                if (distance > 6.3) {
-                    material = Material.RED_CONCRETE;
-                } else if (x == 0 && z == 0) {
-                    material = Material.SEA_LANTERN;
-                } else if (Math.abs(x) <= 1 && Math.abs(z) <= 1) {
-                    material = Material.RED_STAINED_GLASS;
-                } else {
-                    material = (x + z) % 2 == 0 ? Material.POLISHED_DEEPSLATE : Material.DEEPSLATE_TILES;
-                }
-                world.getBlockAt(x, PLATFORM_Y, z).setType(material, false);
-            }
-        }
-        // Little red frame posts that hint at the 1x1 border.
-        for (int[] corner : new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}) {
-            Block post = world.getBlockAt(corner[0] * 5, PLATFORM_Y + 1, corner[1] * 5);
-            post.setType(Material.RED_NETHER_BRICK_WALL, false);
-            post.getRelative(0, 1, 0).setType(Material.REDSTONE_LAMP, false);
-        }
+        return new Location(world, 0.5, PLATFORM_Y + 1, -6.5, 0f, -8f);
     }
 
     public boolean isLobby(World other) {
@@ -133,11 +130,20 @@ public final class Lobby implements Listener {
         player.getInventory().setItem(4, ItemBuilder.of(Material.COMPARATOR)
                 .name("<gold><bold>Menü & Einstellungen</bold> <gray>(Rechtsklick)")
                 .tag(itemKey, "menu").build());
-        if (player.hasPermission(GridLockPlugin.ADMIN_PERMISSION)) {
-            player.getInventory().setItem(8, ItemBuilder.of(Material.LIME_DYE).glow(true)
-                    .name("<green><bold>Challenge starten</bold> <gray>(Rechtsklick)")
-                    .tag(itemKey, "start").build());
+        updateReadyItem(player);
+    }
+
+    /** Slot 9: green when ready, grey when not. */
+    public void updateReadyItem(Player player) {
+        if (!isLobby(player.getWorld())) {
+            return;
         }
+        boolean ready = plugin.game().isReady(player);
+        player.getInventory().setItem(8, ItemBuilder.of(ready ? Material.LIME_DYE : Material.GRAY_DYE).glow(ready)
+                .name(ready ? "<green><bold>Bereit ✔</bold> <gray>(Rechtsklick = doch nicht)"
+                        : "<yellow><bold>Bereit machen</bold> <gray>(Rechtsklick)")
+                .lore("<gray>Die Challenge startet, sobald alle bereit sind.")
+                .tag(itemKey, "start").build());
     }
 
     private boolean isProtected(Player player) {
@@ -159,7 +165,7 @@ public final class Lobby implements Listener {
         switch (tag) {
             case "spawn" -> new SpawnMenu(plugin, player).open();
             case "menu" -> new MainMenu(plugin, player).open();
-            case "start" -> plugin.game().start(player);
+            case "start" -> plugin.game().toggleReady(player);
             default -> {
             }
         }
@@ -215,6 +221,14 @@ public final class Lobby implements Listener {
         }
     }
 
+    /** The decorative nether portal must not lead anywhere. */
+    @EventHandler
+    public void onPortal(PlayerPortalEvent event) {
+        if (isLobby(event.getFrom().getWorld())) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         if (event.getTo().getY() < PLATFORM_Y - 30 && isLobby(event.getTo().getWorld())) {
@@ -226,7 +240,7 @@ public final class Lobby implements Listener {
     private static final class VoidGenerator extends ChunkGenerator {
         @Override
         public Location getFixedSpawnLocation(World world, Random random) {
-            return new Location(world, 0.5, PLATFORM_Y + 1, 0.5);
+            return new Location(world, 0.5, PLATFORM_Y + 1, -6.5);
         }
     }
 }

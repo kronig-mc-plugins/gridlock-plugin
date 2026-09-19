@@ -8,7 +8,6 @@ import net.kronig.gridlock.field.BorderListener;
 import net.kronig.gridlock.field.BorderRenderer;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.field.FieldManager;
-import net.kronig.gridlock.field.SolidBorder;
 import net.kronig.gridlock.game.DataStore;
 import net.kronig.gridlock.game.GameController;
 import net.kronig.gridlock.game.GameData;
@@ -45,7 +44,7 @@ public final class GridLockPlugin extends JavaPlugin {
     private BorderRenderer borderRenderer;
     private BorderListener borderListener;
     private BorderLines borderLines;
-    private SolidBorder solidBorder;
+    private boolean linesDirty;
     private GameController game;
     private TimerManager timer;
     private SidebarManager sidebar;
@@ -88,10 +87,10 @@ public final class GridLockPlugin extends JavaPlugin {
         borderRenderer = new BorderRenderer(settings, fields, expansion, this::data);
         borderListener = new BorderListener(this, fields, expansion);
         borderLines = new BorderLines(settings, fields, expansion, this::data);
-        solidBorder = new SolidBorder(this, fields);
+        // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
         fields.onUnlock(world -> {
-            solidBorder.refreshWorld(world);
-            borderLines.update();
+            linesDirty = true;
+            borderLines.flash(world);
         });
         game = new GameController(this);
         timer = new TimerManager(this);
@@ -101,9 +100,9 @@ public final class GridLockPlugin extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new GuiListener(), this);
         pm.registerEvents(lobby, this);
+        pm.registerEvents(lobby.showcase(), this);
         pm.registerEvents(levels, this);
         pm.registerEvents(borderListener, this);
-        pm.registerEvents(solidBorder, this);
         pm.registerEvents(game, this);
         pm.registerEvents(motd, this);
 
@@ -115,14 +114,22 @@ public final class GridLockPlugin extends JavaPlugin {
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
         scheduler.runTaskTimer(this, borderRenderer::render, 4L, 4L);
         scheduler.runTaskTimer(this, borderLines::update, 10L, 10L);
-        scheduler.runTaskTimer(this, borderLines::updatePushes, 2L, 2L);
-        scheduler.runTaskTimer(this, solidBorder::refreshAll, 20L, 20L);
+        scheduler.runTaskTimer(this, () -> {
+            if (linesDirty) {
+                linesDirty = false;
+                borderLines.update();
+            }
+        }, 1L, 1L);
+        scheduler.runTaskTimer(this, borderLines::updateColors, 2L, 2L);
         scheduler.runTaskTimer(this, borderListener::safetyNet, 10L, 10L);
         scheduler.runTaskTimer(this, () -> {
             timer.tickSecond();
             sidebar.update();
         }, 20L, 20L);
         scheduler.runTaskTimer(this, levels::sync, 5L, 5L);
+        scheduler.runTaskTimer(this, lobby.showcase()::animate, 2L, 2L);
+        scheduler.runTaskTimer(this, lobby.showcase()::particles, 5L, 5L);
+        scheduler.runTaskTimer(this, lobby.showcase()::updateTexts, 10L, 10L);
         scheduler.runTaskTimer(this, this::saveData, 20L * 60, 20L * 60);
 
         // Players that were online during /reload.
@@ -139,10 +146,10 @@ public final class GridLockPlugin extends JavaPlugin {
         if (borderLines != null) {
             borderLines.clear();
         }
-        if (solidBorder != null) {
-            solidBorder.clearAll();
+        if (lobby != null) {
+            lobby.showcase().despawn();
         }
-        if (data != null && dataStore != null) {
+        if (data != null && dataStore != null && fields != null) {
             saveData();
         }
     }
@@ -168,13 +175,11 @@ public final class GridLockPlugin extends JavaPlugin {
         levels.sync();
         sidebar.update();
         borderLines.update();
-        solidBorder.refreshAll();
     }
 
     public void forget(Player player) {
         expansion.forget(player);
         borderListener.forget(player);
-        solidBorder.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);

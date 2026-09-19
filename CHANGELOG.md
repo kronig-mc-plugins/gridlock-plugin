@@ -2,6 +2,28 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.4.0] – 2026-09-19
+
+### Hinzugefügt
+- **Neue Lobby**: eine schwebende Insel mit leuchtend rotem Raster (Grasfeld in der Mitte, dunkle „gesperrte“ Kacheln außen), Unterseite mit Erzen und Tropfstein. Dazu kommen vier Deko-Inseln (Wald, Wüste, Nether mit Portal, End mit Drachenei) und Nachtstimmung.
+- In der Mitte ein **rotierender Grasblock im roten Glaskäfig**, darüber der Schriftzug **GRIDLOCK**.
+- **Abstimm-Säulen**: für jeden Spawn eine Säule mit schwebendem Icon, Schwierigkeit und Live-Stimmen. Klick auf die Säule stimmt ab.
+- **Bereit-System**: Die Challenge startet erst, wenn alle online Spieler bereit sind (grüne Säule, Hotbar-Item, Menü oder `/gl ready`). Admins können mit `/gl forcestart` sofort starten.
+- Info-Tafel „So geht's“ und Status-Tafel (Spieler, Bereit, Favorit) als Hologramme.
+- **Border-Look wie ein Laser-Vorhang**: halbdurchsichtiger Schimmer direkt über dem Boden, der nach oben ausblendet, und dünne scharfe Linien am Geländeprofil (Oberkante, Boden, Stufen, Ecken). Höheres Gelände außerhalb wird rötlich eingefärbt.
+- Beim Erweitern färbt sich die **komplette Border** der Welt rot → orange → gelb, blitzt beim neuen Block kurz **grün** auf und wird dann wieder rot.
+
+### Geändert
+- **Nether-Portal**: Bei der Ankunft wird das ganze Portal plus ein Ring von einem Block drumherum freigeschaltet (statt nur ein Block davor).
+- **Border-Stopp ohne Barrieren**: Die unsichtbaren Barrier-Blöcke aus 1.2.0 sind entfernt. Der Server hält den Spieler an der Kante fest, Klicken, Abbauen und Aufsammeln außerhalb funktionieren wieder uneingeschränkt.
+- `/gl start` heißt jetzt „bereit machen“. Von der Konsole aus erzwingt es den Start.
+
+### Entfernt
+- Einstellung `border.solid` (feste Wand über Barrieren).
+
+### Behoben
+- Das Plugin startete nicht, wenn die Lobby beim Laden Hologramm-Texte füllen wollte, bevor der Spielablauf bereit war.
+
 ## [1.3.2] – 2026-09-19
 
 ### Geändert
