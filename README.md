@@ -12,7 +12,8 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
    - **Grüne Säule** (oder Farbstoff in Slot 9 / `/gl ready`) → **bereit**. Sobald alle online Spieler bereit sind, startet die Challenge. Admins: `/gl forcestart`
    - Comparator → **Menü & Einstellungen**
 2. **Start**: Der Spawn mit den meisten Stimmen wird gesucht (Gleichstand = Zufall, keine Stimmen = Zufall), danach 5-Sekunden-Countdown und alle werden auf das 1x1 teleportiert.
-3. **Spielen**: Die Border ist ein leuchtender roter Vorhang mit dünnen Linien am Gelände. Der Server hält dich an der Kante fest.
+3. **Spielen**: Die Border ist ein leuchtender roter Vorhang mit dünnen Linien am Gelände, gezeichnet auf deiner Höhe (auch unter Tage).
+   Du stoppst hart an der Kante, ohne zurückgesetzt zu werden: Auf der Grenze stehen winzige unsichtbare Shulker (1/16 Block), mit denen dein Client selbst kollidiert. Klicken, Abbauen und Aufsammeln außerhalb bleiben möglich, auch Drüberspringen geht nicht.
    Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, die ganze Border wird orange → gelb → grün) → Block frei, Level weg, kurzer grüner Blitz.
    Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht. Die Border gilt für alle außer Zuschauer (auch im Kreativmodus).
    Fahrzeuge (Minecart, Boot, Pferd) fahren an der Border ohne dich weiter, du bleibst im Feld.

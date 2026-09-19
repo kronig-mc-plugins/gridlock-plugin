@@ -136,11 +136,16 @@ public final class BorderLines {
         }
     }
 
-    /** Chunk-aligned scan window around a player, so runs stay stable while walking inside a chunk. */
+    /**
+     * Chunk-aligned scan window around a player, so runs stay stable while walking inside a chunk. Heights are
+     * taken relative to the player, so the border is also drawn down in a mine shaft or a cave, not just on the
+     * surface far above.
+     */
     private void collectEdges(World world, Location center, int view, Map<List<Integer>, Edge> edges) {
         int chunkRadius = (view + 15) / 16;
         int cx = center.getBlockX() >> 4;
         int cz = center.getBlockZ() >> 4;
+        int refY = center.getBlockY();
         for (int x = (cx - chunkRadius) << 4; x < (cx + chunkRadius + 1) << 4; x++) {
             for (int z = (cz - chunkRadius) << 4; z < (cz + chunkRadius + 1) << 4; z++) {
                 if (!fields.isAllowed(world, x, z)) {
@@ -154,12 +159,13 @@ public final class BorderLines {
                         continue;
                     }
                     if (inner == Integer.MIN_VALUE) {
-                        inner = surface(world, x, z);
+                        inner = groundBelow(world, x, z, refY);
                     }
                     if (inner <= world.getMinHeight()) {
                         break; // void inside the field (End island edge): nothing to stand on
                     }
-                    int outer = surface(world, x + dx, z + dz);
+                    // Two blocks above the player's feet: a wall next to them is covered up to head height.
+                    int outer = groundBelow(world, x + dx, z + dz, refY + 2);
                     boolean alongZ = dx != 0;
                     int plane = alongZ ? (dx > 0 ? x + 1 : x) : (dz > 0 ? z + 1 : z);
                     int fieldSide = (dx + dz) > 0 ? -1 : 1;
@@ -173,8 +179,17 @@ public final class BorderLines {
         }
     }
 
-    private static int surface(World world, int x, int z) {
-        return world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+    /** Highest solid block at or below {@code fromY}; falls back to the surface above ground. */
+    private static int groundBelow(World world, int x, int z, int fromY) {
+        int start = Math.min(fromY, world.getMaxHeight() - 1);
+        int stop = Math.max(world.getMinHeight(), start - 40);
+        for (int y = start; y >= stop; y--) {
+            if (world.getBlockAt(x, y, z).getType().isSolid()) {
+                return y;
+            }
+        }
+        int surface = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        return surface <= start ? surface : world.getMinHeight();
     }
 
     private static void buildPieces(UUID world, Iterable<Edge> edges, Set<Object> out) {

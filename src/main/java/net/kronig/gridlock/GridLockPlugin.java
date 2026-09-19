@@ -8,6 +8,7 @@ import net.kronig.gridlock.field.BorderListener;
 import net.kronig.gridlock.field.BorderRenderer;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.field.FieldManager;
+import net.kronig.gridlock.field.ShulkerWall;
 import net.kronig.gridlock.game.DataStore;
 import net.kronig.gridlock.game.GameController;
 import net.kronig.gridlock.game.GameData;
@@ -44,6 +45,7 @@ public final class GridLockPlugin extends JavaPlugin {
     private BorderRenderer borderRenderer;
     private BorderListener borderListener;
     private BorderLines borderLines;
+    private ShulkerWall shulkerWall;
     private boolean linesDirty;
     private GameController game;
     private TimerManager timer;
@@ -88,9 +90,12 @@ public final class GridLockPlugin extends JavaPlugin {
         borderListener = new BorderListener(this, fields, expansion);
         borderLines = new BorderLines(settings, fields, expansion, this::data);
         // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
+        shulkerWall = new ShulkerWall(this, fields);
+        shulkerWall.cleanupLeftovers();
         fields.onUnlock(world -> {
             linesDirty = true;
             borderLines.flash(world);
+            shulkerWall.refreshWorld(world);
         });
         game = new GameController(this);
         timer = new TimerManager(this);
@@ -103,6 +108,7 @@ public final class GridLockPlugin extends JavaPlugin {
         pm.registerEvents(lobby.showcase(), this);
         pm.registerEvents(levels, this);
         pm.registerEvents(borderListener, this);
+        pm.registerEvents(shulkerWall, this);
         pm.registerEvents(game, this);
         pm.registerEvents(motd, this);
 
@@ -118,10 +124,12 @@ public final class GridLockPlugin extends JavaPlugin {
             if (linesDirty) {
                 linesDirty = false;
                 borderLines.update();
+        shulkerWall.refreshAll();
             }
         }, 1L, 1L);
         scheduler.runTaskTimer(this, borderLines::updateColors, 2L, 2L);
         scheduler.runTaskTimer(this, borderListener::safetyNet, 10L, 10L);
+        scheduler.runTaskTimer(this, shulkerWall::refreshAll, 20L, 20L);
         scheduler.runTaskTimer(this, () -> {
             timer.tickSecond();
             sidebar.update();
@@ -148,6 +156,9 @@ public final class GridLockPlugin extends JavaPlugin {
         }
         if (lobby != null) {
             lobby.showcase().despawn();
+        }
+        if (shulkerWall != null) {
+            shulkerWall.clearAll();
         }
         if (data != null && dataStore != null && fields != null) {
             saveData();
@@ -180,6 +191,7 @@ public final class GridLockPlugin extends JavaPlugin {
     public void forget(Player player) {
         expansion.forget(player);
         borderListener.forget(player);
+        shulkerWall.clear(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);

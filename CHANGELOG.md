@@ -2,6 +2,16 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.5.0] – 2026-09-19
+
+### Hinzugefügt
+- **Harter Stopp an der Border, ohne Zurücksetzen und ohne Barrier-Blöcke**: Auf der Grenzfläche um jeden Spieler steht ein Gitter aus winzigen, unsichtbaren Shulkern (1/16 Block). Shulker sind die einzigen Mobs, mit denen der Client selbst kollidiert, also stoppt dein eigenes Minecraft dich sofort und hart. Die Pfosten sind zu klein, um Klicks zu stören: Abbauen, Bauen und Aufsammeln außerhalb gehen weiter.
+- Die Pfosten stehen in vier Höhen bis 2,7 Blöcke über den Füßen und wandern mit, auch im Sprung. Damit kommt man nicht mehr über die Kante springen.
+- Der Server-Stopp bleibt nur noch als Notfall-Sicherung (Lag, Fahrzeuge, Kolben).
+
+### Geändert
+- **Border wird jetzt auf Spielerhöhe gezeichnet**: Wer sich runtergräbt oder in einer Höhle steht, sieht die Border dort, statt nur an der Oberfläche über sich.
+
 ## [1.4.0] – 2026-09-19
 
 ### Hinzugefügt
