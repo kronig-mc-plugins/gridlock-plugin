@@ -70,6 +70,9 @@ public final class Settings {
             BorderStyle.LINE));
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
             "Farbe", "Farbe der Border (Linie und Partikel).", BorderColor.RED));
+    public static final Setting BORDER_HARD_STOP = register(Setting.bool("border.hard-stop", Category.BORDER, Material.IRON_BARS,
+            "Harter Stopp", "Du prallst an der Border ab wie an einer Wand (persönliche Vanilla-Border genau an der Kante, auf die du zuläufst). Solange du dagegen läufst, kannst du dahinter nicht abbauen – stehen bleiben reicht. Aus: der Server setzt dich zurück.",
+            true));
     public static final Setting BORDER_GLOW_HEIGHT = register(Setting.integer("border.glow-height", Category.BORDER, Material.LIGHT,
             "Schimmer-Höhe", "Wie hoch der leuchtende Vorhang über dem Boden ausblendet, in Zehntel-Blöcken (26 = 2,6 Blöcke).",
             26, 0, 60, "/10 Blöcke"));

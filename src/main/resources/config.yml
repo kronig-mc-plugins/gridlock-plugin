@@ -53,6 +53,9 @@ border:
   style: LINE
   # RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE, WHITE
   color: RED
+  # Harter Stopp: persönliche Vanilla-Border genau an der Kante, auf die man zuläuft (der Client prallt selbst ab).
+  # Solange man dagegen läuft, lässt der Client dahinter nicht abbauen. false = der Server setzt zurück.
+  hard-stop: true
   # Leuchtender Vorhang über dem Boden: Höhe in Zehntel-Blöcken, Stärke in Prozent
   glow-height: 26
   glow-strength: 28

@@ -2,6 +2,17 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.6.0] – 2026-09-20
+
+### Hinzugefügt
+- **Harter Stopp an der Border über eine persönliche Vanilla-Border.** Jeder Spieler bekommt eine eigene, riesige Worldborder, deren eine Seite exakt auf der Feldkante liegt, auf die er gerade zuläuft (an Ecken zwei Seiten). Der Client prallt selbst ab, ohne Zurücksetzen, ohne Blöcke und ohne Entities. Das Feld bleibt frei formbar, weil der Rest der Border tausende Blöcke entfernt ist.
+- Die Wand wird schon bis zu 3 Blöcke vor der Kante gesetzt und berücksichtigt auch Schwung ohne Tastendruck (Sprung, Eis, Rückstoß).
+- Die Wand erscheint im Vanilla-Look in Rot.
+- Einstellung `border.hard-stop` (Standard: an). Aus = der Server setzt wie bisher zurück.
+
+### Bekannte Einschränkung
+- Minecraft lässt hinter der eigenen Worldborder nicht abbauen oder platzieren. Deshalb ist die Wand nur aktiv, solange man auf die Kante zuläuft. Wer stehen bleibt oder sich wegbewegt, kann außerhalb normal abbauen.
+
 ## [1.5.2] – 2026-09-20
 
 ### Entfernt

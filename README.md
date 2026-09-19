@@ -13,7 +13,7 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
    - Comparator → **Menü & Einstellungen**
 2. **Start**: Der Spawn mit den meisten Stimmen wird gesucht (Gleichstand = Zufall, keine Stimmen = Zufall), danach 5-Sekunden-Countdown und alle werden auf das 1x1 teleportiert.
 3. **Spielen**: Die Border ist ein leuchtender roter Vorhang mit dünnen Linien am Gelände, gezeichnet auf deiner Höhe (auch unter Tage).
-   An der Kante hält dich der Server auf. Klicken, Abbauen und Aufsammeln außerhalb bleiben möglich.
+   An der Kante prallst du hart ab: Du bekommst eine persönliche Vanilla-Border genau an der Kante, auf die du zuläufst. Abbauen außerhalb geht, sobald du nicht mehr dagegen läufst.
    Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, die ganze Border wird orange → gelb → grün) → Block frei, Level weg, kurzer grüner Blitz.
    Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht. Die Border gilt für alle außer Zuschauer (auch im Kreativmodus).
    Fahrzeuge (Minecart, Boot, Pferd) fahren an der Border ohne dich weiter, du bleibst im Feld.

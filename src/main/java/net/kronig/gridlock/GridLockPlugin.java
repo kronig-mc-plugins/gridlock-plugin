@@ -8,6 +8,7 @@ import net.kronig.gridlock.field.BorderListener;
 import net.kronig.gridlock.field.BorderRenderer;
 import net.kronig.gridlock.field.ExpansionManager;
 import net.kronig.gridlock.field.FieldManager;
+import net.kronig.gridlock.field.HardStop;
 import net.kronig.gridlock.field.ShulkerWall;
 import net.kronig.gridlock.game.DataStore;
 import net.kronig.gridlock.game.GameController;
@@ -46,6 +47,7 @@ public final class GridLockPlugin extends JavaPlugin {
     private BorderListener borderListener;
     private BorderLines borderLines;
     private ShulkerWall shulkerWall;
+    private HardStop hardStop;
     private boolean linesDirty;
     private GameController game;
     private TimerManager timer;
@@ -91,6 +93,7 @@ public final class GridLockPlugin extends JavaPlugin {
         borderLines = new BorderLines(settings, fields, expansion, this::data);
         // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
         shulkerWall = new ShulkerWall(this);
+        hardStop = new HardStop(this, fields);
         fields.onUnlock(world -> {
             linesDirty = true;
             borderLines.flash(world);
@@ -107,6 +110,7 @@ public final class GridLockPlugin extends JavaPlugin {
         pm.registerEvents(levels, this);
         pm.registerEvents(borderListener, this);
         pm.registerEvents(shulkerWall, this);
+        pm.registerEvents(hardStop, this);
         pm.registerEvents(game, this);
         pm.registerEvents(motd, this);
 
@@ -116,6 +120,7 @@ public final class GridLockPlugin extends JavaPlugin {
 
         var scheduler = Bukkit.getScheduler();
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
+        scheduler.runTaskTimer(this, hardStop::tick, 1L, 1L);
         scheduler.runTaskTimer(this, borderRenderer::render, 4L, 4L);
         scheduler.runTaskTimer(this, borderLines::update, 10L, 10L);
         scheduler.runTaskTimer(this, () -> {
@@ -162,6 +167,9 @@ public final class GridLockPlugin extends JavaPlugin {
         if (lobby != null) {
             lobby.showcase().despawn();
         }
+        if (hardStop != null) {
+            hardStop.clearAll();
+        }
         if (data != null && dataStore != null && fields != null) {
             saveData();
         }
@@ -193,6 +201,7 @@ public final class GridLockPlugin extends JavaPlugin {
     public void forget(Player player) {
         expansion.forget(player);
         borderListener.forget(player);
+        hardStop.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);
