@@ -2,6 +2,16 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.5.2] – 2026-09-20
+
+### Entfernt
+- **Shulker-Pfosten an der Border (aus 1.5.0) komplett entfernt.** Shulker rasten in Minecraft immer auf die Blockmitte ein. Die Pfosten standen deshalb nicht auf der Grenze, sondern mitten im Feld, und blockierten Laufen, Klicken und Platzieren. An der Border hält wieder der Server den Spieler auf.
+
+### Behoben
+- Alle übrig gebliebenen Pfosten werden beim Serverstart und beim Laden jedes Chunks automatisch gelöscht. Zusätzlich gibt es `/gl cleanup` (entfernt sie sofort und speichert die Welten).
+- Die Pfosten ließen sich nicht mit `/kill` entfernen, weil das Plugin jeden Schaden an ihnen abbrach.
+- Hinweis: Eine zwischenzeitlich gebaute Datei `GridLock-1.4.0.jar` enthielt bereits den Shulker-Code. Bitte nur noch 1.5.2 oder neuer verwenden.
+
 ## [1.5.1] – 2026-09-19
 
 ### Hinzugefügt

@@ -32,9 +32,9 @@ public final class GridLockCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "menu", "settings", "config", "spawn", "vote", "ready", "info", "pay", "scoreboard", "help",
-            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock");
+            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup");
     private static final List<String> ADMIN_SUBCOMMANDS = List.of(
-            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock");
+            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup");
     private static final int MAX_FIELD_RADIUS = 25;
 
     private final GridLockPlugin plugin;
@@ -70,6 +70,12 @@ public final class GridLockCommand implements BasicCommand {
                 }
             }
             case "forcestart" -> plugin.game().forceStart(sender);
+            case "cleanup" -> {
+                int removed = plugin.shulkerWall().cleanup();
+                Bukkit.getWorlds().forEach(World::save);
+                sender.sendMessage(Text.prefixed("<gray>" + removed + " alte Border-Pfosten entfernt, Welten gespeichert. "
+                        + "Nicht geladene Chunks werden beim Laden automatisch aufgeräumt."));
+            }
             case "reset" -> reset(sender, args);
             case "reload" -> {
                 plugin.settings().load();
@@ -355,6 +361,7 @@ public final class GridLockCommand implements BasicCommand {
             sender.sendMessage(Text.mm("<gray>/gl level [spieler|pool|alle] [set|add|remove] [n]"));
             sender.sendMessage(Text.mm("<gray>/gl playtime [spieler] [set|add|remove] [zeit]"));
             sender.sendMessage(Text.mm("<gray>/gl unlock | lock [radius] <dark_gray>– Feld unter dir"));
+            sender.sendMessage(Text.mm("<gray>/gl cleanup <dark_gray>– übrig gebliebene Border-Pfosten entfernen"));
             sender.sendMessage(Text.mm("<gray>/timer pause | resume | reset | set | add | remove [zeit]"));
         }
     }

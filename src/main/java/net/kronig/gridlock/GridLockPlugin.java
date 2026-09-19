@@ -90,12 +90,10 @@ public final class GridLockPlugin extends JavaPlugin {
         borderListener = new BorderListener(this, fields, expansion);
         borderLines = new BorderLines(settings, fields, expansion, this::data);
         // Many unlocks in one tick (e.g. /gl unlock 25) only redraw the line once.
-        shulkerWall = new ShulkerWall(this, fields);
-        shulkerWall.cleanupLeftovers();
+        shulkerWall = new ShulkerWall(this);
         fields.onUnlock(world -> {
             linesDirty = true;
             borderLines.flash(world);
-            shulkerWall.refreshWorld(world);
         });
         game = new GameController(this);
         timer = new TimerManager(this);
@@ -126,12 +124,17 @@ public final class GridLockPlugin extends JavaPlugin {
                 // Look settings are baked into the displays, so redraw them from scratch.
         borderLines.clear();
         borderLines.update();
-        shulkerWall.refreshAll();
             }
         }, 1L, 1L);
         scheduler.runTaskTimer(this, borderLines::updateColors, 2L, 2L);
         scheduler.runTaskTimer(this, borderListener::safetyNet, 10L, 10L);
-        scheduler.runTaskTimer(this, shulkerWall::refreshAll, 20L, 20L);
+        // Entities of already loaded chunks are only reliably available once the server is ticking.
+        scheduler.runTaskLater(this, () -> {
+            int removed = shulkerWall.cleanup();
+            if (removed > 0) {
+                getLogger().info(removed + " alte Border-Pfosten (Shulker) entfernt.");
+            }
+        }, 40L);
         scheduler.runTaskTimer(this, () -> {
             timer.tickSecond();
             sidebar.update();
@@ -158,9 +161,6 @@ public final class GridLockPlugin extends JavaPlugin {
         }
         if (lobby != null) {
             lobby.showcase().despawn();
-        }
-        if (shulkerWall != null) {
-            shulkerWall.clearAll();
         }
         if (data != null && dataStore != null && fields != null) {
             saveData();
@@ -193,7 +193,6 @@ public final class GridLockPlugin extends JavaPlugin {
     public void forget(Player player) {
         expansion.forget(player);
         borderListener.forget(player);
-        shulkerWall.clear(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);
@@ -201,6 +200,10 @@ public final class GridLockPlugin extends JavaPlugin {
 
     public SidebarManager sidebar() {
         return sidebar;
+    }
+
+    public ShulkerWall shulkerWall() {
+        return shulkerWall;
     }
 
     public MotdManager motd() {
