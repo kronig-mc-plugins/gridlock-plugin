@@ -66,7 +66,7 @@ Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLo
 
 ## Client-Mod (optional)
 
-Für einen **harten Stopp an der Border ohne Zurücksetzen** gibt es den Fabric-Mod [`gridlock-mod`](../gridlock-mod). Mit Mod kollidiert der Client selbst mit den Feldkanten und zeichnet die Border selbst. Spieler mit und ohne Mod können gleichzeitig auf demselben Server spielen, der Server bleibt in jedem Fall der Schiedsrichter.
+Für einen **harten Stopp an der Border ohne Zurücksetzen** gibt es den Fabric-Mod [`gridlock-mod`](https://github.com/kronig-mc-plugins/gridlock-mod). Mit Mod kollidiert der Client selbst mit den Feldkanten und zeichnet die Border selbst. Spieler mit und ohne Mod können gleichzeitig auf demselben Server spielen, der Server bleibt in jedem Fall der Schiedsrichter.
 
 ## Server-Icon
 

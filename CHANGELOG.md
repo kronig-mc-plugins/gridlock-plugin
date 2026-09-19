@@ -12,6 +12,7 @@ Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](h
 - **Todes-Protokoll im Server-Log**: Ort, Anzahl der Drops, keepInventory und Ursache bei jedem Tod (zur Diagnose, das Plugin selbst fasst Drops nicht an).
 
 ### Geändert
+- Das Repository ist nach [`kronig-mc-plugins/gridlock-plugin`](https://github.com/kronig-mc-plugins/gridlock-plugin) umgezogen, der Mod liegt daneben in `gridlock-mod`.
 - Den ansteigenden Ton beim Erweitern hören jetzt **alle Spieler**, egal wie weit entfernt, auch der Erweiternde.
 
 ## [1.6.1] – 2026-09-20
