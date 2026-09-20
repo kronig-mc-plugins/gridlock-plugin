@@ -2,6 +2,12 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.7.2] – 2026-09-20
+
+### Geändert
+- **Ein einziger durchgehender Rahmen statt vieler Einzelrahmen.** Die Border ist jetzt eine Linie am Boden des Feldes entlang der Grenze. Wo der Boden eine Stufe macht, geht die Linie an der Ecke senkrecht hoch oder runter und läuft weiter. Auf Blöcken außerhalb wird nichts mehr gezeichnet, einzelne Blöcke an der Grenze bekommen also keinen eigenen Würfelrahmen mehr. Decken- und Absatzlinien entfallen.
+- **Echte Blockhöhen:** Slabs, Ackerboden, Trampelpfade und ähnliche Blöcke werden dort umrandet, wo sie wirklich enden, statt einen halben Block zu hoch.
+
 ## [1.7.1] – 2026-09-20
 
 ### Behoben
