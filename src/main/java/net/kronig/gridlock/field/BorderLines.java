@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -39,9 +40,9 @@ import java.util.function.Supplier;
  *
  * <p>For every boundary edge the real air spaces of the field column next to it are looked at (tunnel, staircase,
  * shaft, cave, surface) over the whole height around a player, not just at the player's own level. The result is
- * one continuous frame per walkable level: a thin line along the floor of the field at the boundary, with vertical
- * pieces where the floor steps up or down. Nothing is drawn on blocks outside, so single blocks never get a frame
- * of their own. Lines carry a soft glow that fades out upwards (text-display backgrounds, the only displays with
+ * one continuous frame per walkable level: a thin line along the boundary on the higher of the two sides (the
+ * floor of the field, or the top of the blocks standing right outside), with vertical pieces where that height
+ * steps up or down. A much fainter curtain fills the whole height of the air space. Lines carry a soft glow that fades out upwards (text-display backgrounds, the only displays with
  * real transparency). Heights come from the real collision shapes (slabs, farmland, paths).
  *
  * <p>Block-long pieces with the same height are merged into straight runs. While someone pushes against the
@@ -53,9 +54,11 @@ public final class BorderLines {
      * A horizontal line on plane {@code plane} (x = plane if {@code alongZ}, else z = plane) at height {@code y},
      * spanning {@code start .. start + length} on the other axis. {@code fieldSide} is -1/+1: on which side of the
      * plane the field lies. {@code y} and {@code glowTop} are in 1/1000 blocks, so slabs, farmland and paths are
-     * exact; {@code glowTop == y} means no glow.
+     * exact; {@code glowTop == y} means no glow. {@code curtainBottom..curtainTop} is the faint curtain over the
+     * whole air space, fading out up to {@code fadeTop} under open sky.
      */
-    private record Run(UUID world, boolean alongZ, int plane, int fieldSide, int start, int length, int y, int glowTop) {
+    private record Run(UUID world, boolean alongZ, int plane, int fieldSide, int start, int length, int y, int glowTop,
+                       int curtainBottom, int curtainTop, int fadeTop) {
     }
 
     /** Vertical line at a vertex of the outline, from {@code low} to {@code high} (1/1000 blocks). */
@@ -63,11 +66,16 @@ public final class BorderLines {
     }
 
     /** One block-long piece of a {@link Run}. */
-    private record Seg(boolean alongZ, int plane, int fieldSide, int along, int y, int glowTop) {
+    private record Seg(boolean alongZ, int plane, int fieldSide, int along, int y, int glowTop,
+                       int curtainBottom, int curtainTop, int fadeTop) {
     }
 
     /** An air space in a column: from the top of its floor to the underside of its ceiling (1/1000 blocks). */
     private record Gap(int bottom, int top, boolean capped) {
+    }
+
+    /** Where the frame line of one edge runs within an air space. */
+    private record Level(Gap gap, int y) {
     }
 
     /** A spawned display plus the alpha its colour should have (-1 = solid line). */
@@ -78,6 +86,8 @@ public final class BorderLines {
     private static final int SCAN = 40;
     /** Share of the total glow height and of the strength per band, from the line upwards. */
     private static final double[][] FADE_BANDS = {{0.25, 1.0}, {0.3, 0.55}, {0.45, 0.2}};
+    /** Strength of the full-height curtain relative to the glow right above the line. */
+    private static final float CURTAIN_SHARE = 0.45f;
     private static final long FLASH_MS = 900;
     private static final Color[] PUSH_STAGES = {
             Color.fromRGB(255, 140, 0), Color.fromRGB(255, 225, 40), Color.fromRGB(70, 235, 70)
@@ -127,7 +137,7 @@ public final class BorderLines {
         }
         int view = Math.max(settings.integer(Settings.BORDER_VIEW), 12);
         Map<UUID, Set<Seg>> segsByWorld = new HashMap<>();
-        Map<UUID, Map<Long, List<List<Gap>>>> cornersByWorld = new HashMap<>();
+        Map<UUID, Map<Long, List<List<Level>>>> cornersByWorld = new HashMap<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
             World world = player.getWorld();
             if (player.getGameMode() == GameMode.SPECTATOR || !fields.isChallengeWorld(world)
@@ -172,7 +182,7 @@ public final class BorderLines {
     }
 
     /** Chunk-aligned scan window around a player, so pieces stay stable while walking inside a chunk. */
-    private void collect(World world, Location center, int view, Set<Seg> segs, Map<Long, List<List<Gap>>> corners) {
+    private void collect(World world, Location center, int view, Set<Seg> segs, Map<Long, List<List<Level>>> corners) {
         int chunkRadius = (view + 15) / 16;
         int cx = center.getBlockX() >> 4;
         int cz = center.getBlockZ() >> 4;
@@ -198,31 +208,64 @@ public final class BorderLines {
 
     /** Floor line of every air space of this edge; the corners remember the air spaces to join them later. */
     private void collectEdge(World world, int x, int z, int dx, int dz, int refY, int glow,
-                             Map<Long, List<Gap>> gapCache, Set<Seg> segs, Map<Long, List<List<Gap>>> corners) {
+                             Map<Long, List<Gap>> gapCache, Set<Seg> segs, Map<Long, List<List<Level>>> corners) {
         boolean alongZ = dx != 0;
         int plane = alongZ ? (dx > 0 ? x + 1 : x) : (dz > 0 ? z + 1 : z);
         int fieldSide = (dx + dz) > 0 ? -1 : 1;
         int along = alongZ ? z : x;
         List<Gap> gaps = gaps(world, x, z, refY, gapCache);
+        // Under open sky the curtain ends at the terrain surface on either side of the boundary.
+        int surface = (Math.max(world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES),
+                world.getHighestBlockYAt(x + dx, z + dz, HeightMap.MOTION_BLOCKING_NO_LEAVES)) + 1) * 1000;
+        List<Level> levels = new ArrayList<>(gaps.size());
         for (Gap gap : gaps) {
-            segs.add(new Seg(alongZ, plane, fieldSide, along, gap.bottom(), Math.min(gap.bottom() + glow, gap.top())));
+            int y = lineHeight(world, x + dx, z + dz, gap);
+            levels.add(new Level(gap, y));
+            int curtainTop = gap.capped() ? gap.top() : Math.min(gap.top(), Math.max(gap.bottom(), surface));
+            int fadeTop = gap.capped() ? curtainTop : Math.min(gap.top(), curtainTop + Math.max(1000, glow));
+            segs.add(new Seg(alongZ, plane, fieldSide, along, y, Math.min(y + glow, gap.top()),
+                    gap.bottom(), curtainTop, fadeTop));
         }
         for (int end = 0; end <= 1; end++) {
             long vertex = alongZ ? FieldManager.pack(plane, along + end) : FieldManager.pack(along + end, plane);
-            corners.computeIfAbsent(vertex, k -> new ArrayList<>()).add(gaps);
+            corners.computeIfAbsent(vertex, k -> new ArrayList<>()).add(levels);
         }
     }
 
+    /**
+     * The frame runs along the higher side of the boundary: the floor of the field, or the top of the stack of
+     * blocks standing right outside it. A wall that fills the whole air space (a tunnel) has no top to run along,
+     * so the line stays on the floor there.
+     */
+    private static int lineHeight(World world, int outerX, int outerZ, Gap gap) {
+        int height = gap.bottom();
+        int firstY = Math.floorDiv(gap.bottom() - 1, 1000);
+        for (int y = firstY; y <= firstY + SCAN; y++) {
+            int[] extent = extent(world, outerX, y, outerZ);
+            if (extent == null) {
+                if (y >= Math.floorDiv(height, 1000)) {
+                    break; // free above the stack
+                }
+                continue; // still below the floor of the field
+            }
+            if (extent[0] > height) {
+                break; // something floating above, not part of the stack
+            }
+            height = Math.max(height, extent[1]);
+        }
+        return height >= gap.top() ? gap.bottom() : height;
+    }
+
     /** Vertical pieces joining the floor lines of different edges at a corner, wherever their air spaces touch. */
-    private static List<int[]> connect(List<List<Gap>> edges) {
+    private static List<int[]> connect(List<List<Level>> edges) {
         List<int[]> ranges = new ArrayList<>();
         for (int i = 0; i < edges.size(); i++) {
             for (int j = i + 1; j < edges.size(); j++) {
-                for (Gap a : edges.get(i)) {
-                    for (Gap b : edges.get(j)) {
-                        boolean touching = a.bottom() < b.top() && b.bottom() < a.top();
-                        if (touching && a.bottom() != b.bottom()) {
-                            ranges.add(new int[]{Math.min(a.bottom(), b.bottom()), Math.max(a.bottom(), b.bottom())});
+                for (Level a : edges.get(i)) {
+                    for (Level b : edges.get(j)) {
+                        boolean touching = a.gap().bottom() < b.gap().top() && b.gap().bottom() < a.gap().top();
+                        if (touching && a.y() != b.y()) {
+                            ranges.add(new int[]{Math.min(a.y(), b.y()), Math.max(a.y(), b.y())});
                         }
                     }
                 }
@@ -309,7 +352,8 @@ public final class BorderLines {
     private static void buildRuns(UUID world, Set<Seg> segs, Set<Object> out) {
         Map<List<Integer>, TreeMap<Integer, Seg>> lines = new HashMap<>();
         for (Seg seg : segs) {
-            lines.computeIfAbsent(List.of(seg.alongZ() ? 1 : 0, seg.plane(), seg.fieldSide(), seg.y(), seg.glowTop()),
+            lines.computeIfAbsent(List.of(seg.alongZ() ? 1 : 0, seg.plane(), seg.fieldSide(), seg.y(), seg.glowTop(),
+                            seg.curtainBottom(), seg.curtainTop(), seg.fadeTop()),
                     k -> new TreeMap<>()).put(seg.along(), seg);
         }
         for (TreeMap<Integer, Seg> line : lines.values()) {
@@ -323,14 +367,16 @@ public final class BorderLines {
                 }
                 if (start != null) {
                     out.add(new Run(world, sample.alongZ(), sample.plane(), sample.fieldSide(), start,
-                            previous - start + 1, sample.y(), sample.glowTop()));
+                            previous - start + 1, sample.y(), sample.glowTop(),
+                            sample.curtainBottom(), sample.curtainTop(), sample.fadeTop()));
                 }
                 start = along;
                 previous = along;
             }
             if (start != null) {
                 out.add(new Run(world, sample.alongZ(), sample.plane(), sample.fieldSide(), start,
-                        previous - start + 1, sample.y(), sample.glowTop()));
+                        previous - start + 1, sample.y(), sample.glowTop(),
+                            sample.curtainBottom(), sample.curtainTop(), sample.fadeTop()));
             }
         }
     }
@@ -357,6 +403,24 @@ public final class BorderLines {
             }
             curtain(parts, world, run, planeOffset, mid, bandBottom, (float) (bandTop - bandBottom), length, yaw, color, alpha);
             bandBottom = bandTop;
+        }
+        // Faint curtain over the whole air space, so the border stays readable on tall staircases and in shafts.
+        int faint = Math.round(strength * CURTAIN_SHARE);
+        if (faint > 0) {
+            double curtainBottom = run.curtainBottom() / 1000.0;
+            double curtainTop = run.curtainTop() / 1000.0;
+            if (curtainTop - curtainBottom > 0.01) {
+                curtain(parts, world, run, planeOffset, mid, curtainBottom, (float) (curtainTop - curtainBottom), length,
+                        yaw, color, faint);
+            }
+            double fadeHeight = run.fadeTop() / 1000.0 - curtainTop;
+            if (fadeHeight > 0.01) {
+                // Two steps stand in for a gradient, text displays have one alpha each.
+                curtain(parts, world, run, planeOffset, mid, curtainTop, (float) (fadeHeight / 2), length, yaw, color,
+                        Math.round(faint * 0.6f));
+                curtain(parts, world, run, planeOffset, mid, curtainTop + fadeHeight / 2, (float) (fadeHeight / 2), length,
+                        yaw, color, Math.round(faint * 0.25f));
+            }
         }
         parts.add(line(world, run, color));
         return parts;
