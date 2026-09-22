@@ -97,9 +97,8 @@ public final class MainMenu extends Gui {
                     .description("Verkauft den Block, auf dem du stehst, für " + plugin.settings().integer(
                             net.kronig.gridlock.config.Settings.BUYBACK_PERCENT) + " % seiner Kosten.")
                     .lore("")
-                    .lore("<gray>Wert des Blocks: <green>" + net.kronig.gridlock.field.BuybackManager.formatLevels(
+                    .lore("<gray>Rückerstattung: <green>+" + net.kronig.gridlock.field.BuybackManager.formatLevels(
                             plugin.buyback().refundHundredths(viewer.getWorld())) + " Level")
-                    .lore("<gray>Guthaben: <white>" + net.kronig.gridlock.field.BuybackManager.formatLevels(plugin.buyback().credit(viewer)))
                     .lore("<yellow>▶ Klick (mit Bestätigung)")
                     .build(), type -> {
                 click();

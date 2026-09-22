@@ -42,14 +42,7 @@ public final class BuybackManager {
         return String.format(java.util.Locale.GERMANY, "%.2f", hundredths / 100.0);
     }
 
-    private String creditKey(Player player) {
-        return plugin.levels().mode() == net.kronig.gridlock.config.PaymentMode.POOL ? "pool" : player.getUniqueId().toString();
-    }
 
-    /** Current unpaid credit of the player (or the pool), in hundredths of a level. */
-    public int credit(Player player) {
-        return plugin.data().refundCredit.getOrDefault(creditKey(player), 0);
-    }
 
     /** Why the player cannot sell the column they stand on, or null if they can. */
     public String blocker(Player player) {
@@ -106,24 +99,17 @@ public final class BuybackManager {
         destination.setPitch(at.getPitch());
         player.teleport(destination);
         fields.lock(world, x, z);
-        // Fractions below one level are collected as credit and paid out once they add up to a whole level.
-        String key = creditKey(player);
-        int total = plugin.data().refundCredit.getOrDefault(key, 0) + hundredths;
-        int refund = total / 100;
-        int rest = total % 100;
-        plugin.data().refundCredit.put(key, rest);
-        plugin.levels().refund(player, refund);
+        // Fractions of a level go straight into the XP bar as progress towards the next level.
+        plugin.levels().refundHundredths(player, hundredths);
         plugin.data().blocksSold++;
 
         world.spawnParticle(Particle.SMOKE, new Location(world, x + 0.5, at.getY() + 0.5, z + 0.5), 20, 0.3, 0.5, 0.3, 0.01);
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.5f, 1.4f);
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 0.9f);
-        String creditNote = rest > 0
-                ? " <dark_gray>·</dark_gray> <gray>Guthaben: <white>" + formatLevels(rest) + "</white> <dark_gray>(bei 1,00 gibt es ein Level)"
-                : "";
-        player.sendMessage(Text.prefixed("<gray>Block verkauft: <green>+" + refund + " Level</green> <dark_gray>("
-                + formatLevels(hundredths) + " = " + plugin.settings().integer(Settings.BUYBACK_PERCENT) + " %)</dark_gray>"
-                + creditNote + "<gray>. Feld: <white>" + fields.size(world) + " Blöcke"));
+        player.sendMessage(Text.prefixed("<gray>Block verkauft: <green>+" + formatLevels(hundredths) + " Level</green> <dark_gray>("
+                + plugin.settings().integer(Settings.BUYBACK_PERCENT) + " %"
+                + (plugin.levels().mode() == net.kronig.gridlock.config.PaymentMode.POOL ? ", Team-Pool" : "")
+                + ")</dark_gray><gray>. Feld: <white>" + fields.size(world) + " Blöcke"));
         for (Player other : world.getPlayers()) {
             if (!other.equals(player)) {
                 other.sendMessage(Text.prefixed("<gray>" + Text.escape(player.getName()) + " hat einen Block verkauft <dark_gray>("

@@ -61,14 +61,33 @@ public final class LevelManager implements Listener {
 
     /** Gives levels back (buyback): to the pool or to the player. */
     public void refund(Player player, int levels) {
-        if (levels <= 0) {
+        refundHundredths(player, levels * 100);
+    }
+
+    /**
+     * Refunds a fraction of a level (in hundredths). Whole levels are added as levels, the rest goes into the
+     * XP bar as progress towards the next level – of the pool or of the player.
+     */
+    public void refundHundredths(Player player, int hundredths) {
+        if (hundredths <= 0) {
             return;
         }
+        int levels = hundredths / 100;
+        int rest = hundredths % 100;
         if (mode() == PaymentMode.POOL) {
-            data.get().poolLevels += levels;
+            GameData gameData = data.get();
+            gameData.poolLevels += levels;
+            if (rest > 0) {
+                addPoolPoints((int) Math.round(pointsForNext(gameData.poolLevels) * rest / 100.0));
+            }
             sync();
         } else {
-            player.giveExpLevels(levels);
+            if (levels > 0) {
+                player.giveExpLevels(levels);
+            }
+            if (rest > 0) {
+                player.giveExp((int) Math.round(player.getExpToLevel() * rest / 100.0));
+            }
         }
     }
 

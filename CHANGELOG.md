@@ -2,6 +2,11 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.8.3] – 2026-09-22
+
+### Geändert
+- **Rückkauf zahlt Bruchteile direkt in die XP-Leiste** statt sie als Guthaben zu sammeln: 25 % von einem 1-Level-Block sind 0,25 Level und erscheinen sofort als Fortschritt zum nächsten Level – im Team-Pool bei allen, sonst beim Verkäufer.
+
 ## [1.8.2] – 2026-09-22
 
 ### Behoben
