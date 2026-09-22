@@ -71,6 +71,7 @@ public final class SpawnMenu extends Gui {
             }
             set(PRESET_SLOTS[i], item.build(), type -> {
                 if (plugin.data().state != GameState.LOBBY) {
+                    viewer.sendMessage(Text.prefixed("<red>Abstimmen geht nur in der Lobby – der Spawn dieser Runde steht fest."));
                     return;
                 }
                 click();

@@ -81,6 +81,10 @@ Für einen **harten Stopp an der Border ohne Zurücksetzen** gibt es den Fabric-
 Das Plugin bringt ein eigenes Icon für die Serverliste mit, eine `server-icon.png` im Server-Ordner ist nicht nötig.
 Eigenes Icon: `plugins/GridLock/server-icon.png` ersetzen (beliebige Größe, wird auf 64×64 skaliert) und `/gl reload`.
 
+## Download
+
+Fertige Jars liegen unter [Releases](https://github.com/kronig-mc-plugins/gridlock-plugin/releases). Jeder Push wird von GitHub Actions gebaut, jeder Tag `v*` wird automatisch als Release veröffentlicht.
+
 ## Server-Anforderungen
 
 - Paper **26.3**, Java **25**

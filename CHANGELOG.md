@@ -2,6 +2,15 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.8.1] – 2026-09-22
+
+### Hinzugefügt
+- **GitHub Actions**: Jeder Push baut die Jar automatisch (als Artefakt am Workflow-Lauf), jeder Tag `v*` erzeugt ein Release mit fertiger Jar zum Herunterladen.
+- **Einstellungen nur in der Lobby**: Start-Level und Spawn-Suchradius wirken nur beim Start und lassen sich während einer Runde nicht mehr ändern – im Menü rot markiert, per Befehl abgelehnt. Die Spawn-Abstimmung war schon vorher nur in der Lobby möglich, das Menü sagt jetzt klar warum.
+
+### Geändert
+- **Rückkauf und Admin-Sperren zerreißen das Feld nie**: Vor jedem Sperren eines Blocks prüft das Plugin, ob alle übrigen Blöcke noch zusammenhängen (Startblock bleibt immer). Das galt beim Rückkauf schon, jetzt auch bei `/gl lock` – übersprungene Blöcke werden gemeldet.
+
 ## [1.8.0] – 2026-09-22
 
 ### Hinzugefügt

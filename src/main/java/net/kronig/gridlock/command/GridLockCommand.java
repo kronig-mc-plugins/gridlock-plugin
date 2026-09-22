@@ -145,6 +145,10 @@ public final class GridLockCommand implements BasicCommand {
             sender.sendMessage(Text.prefixed("<red>Nur Admins können Einstellungen ändern."));
             return;
         }
+        if (Settings.LOBBY_ONLY.contains(setting) && plugin.data().state != GameState.LOBBY) {
+            sender.sendMessage(Text.prefixed("<red>" + setting.name() + " lässt sich nur in der Lobby ändern – die Runde läuft schon."));
+            return;
+        }
         Object value = setting.parse(args[2]);
         if (value == null) {
             sender.sendMessage(Text.prefixed("<red>Ungültiger Wert. Erlaubt: <white>" + Text.escape(setting.inputHint())));
@@ -345,17 +349,28 @@ public final class GridLockCommand implements BasicCommand {
         int bx = player.getLocation().getBlockX();
         int bz = player.getLocation().getBlockZ();
         int changed = 0;
+        int skipped = 0;
         for (int x = bx - radius; x <= bx + radius; x++) {
             for (int z = bz - radius; z <= bz + radius; z++) {
-                boolean done = unlock ? plugin.fields().unlock(player.getWorld(), x, z)
-                        : plugin.fields().lock(player.getWorld(), x, z);
+                boolean done;
+                if (unlock) {
+                    done = plugin.fields().unlock(player.getWorld(), x, z);
+                } else if (plugin.fields().isUnlocked(player.getWorld(), x, z)
+                        && (plugin.fields().isOrigin(player.getWorld(), x, z)
+                        || !plugin.fields().staysConnected(player.getWorld(), x, z))) {
+                    skipped++; // the origin, or the field would fall apart
+                    done = false;
+                } else {
+                    done = plugin.fields().lock(player.getWorld(), x, z);
+                }
                 if (done) {
                     changed++;
                 }
             }
         }
         player.sendMessage(Text.prefixed("<gray>" + changed + " Blöcke " + (unlock ? "<green>freigeschaltet" : "<red>gesperrt")
-                + "<gray>. Feld jetzt: <white>" + plugin.fields().size(player.getWorld()) + " Blöcke"));
+                + "<gray>. Feld jetzt: <white>" + plugin.fields().size(player.getWorld()) + " Blöcke"
+                + (skipped > 0 ? " <dark_gray>(" + skipped + " übersprungen: Startblock oder Feld würde zerbrechen)" : "")));
     }
 
     private static int apply(int current, String operation, int amount) {

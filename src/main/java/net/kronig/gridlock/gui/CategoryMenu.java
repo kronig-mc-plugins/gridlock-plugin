@@ -96,6 +96,9 @@ public final class CategoryMenu extends Gui {
                 builder.lore("<yellow>Links</yellow> <gray>weiter   <yellow>Rechts</yellow> <gray>zurück");
             }
         }
+        if (lockedNow(setting)) {
+            builder.lore("<red>✖ Nur in der Lobby änderbar");
+        }
         return builder.lore("<dark_gray>/gl config " + setting.key()).build();
     }
 
@@ -124,8 +127,17 @@ public final class CategoryMenu extends Gui {
         };
     }
 
+    private boolean lockedNow(Setting setting) {
+        return Settings.LOBBY_ONLY.contains(setting) && plugin.data().state != net.kronig.gridlock.game.GameState.LOBBY;
+    }
+
     private void change(Setting setting, ClickType type) {
         if (!requireAdmin()) {
+            return;
+        }
+        if (lockedNow(setting)) {
+            viewer.sendMessage(Text.prefixed("<red>" + setting.name() + " lässt sich nur in der Lobby ändern – die Runde läuft schon."));
+            viewer.playSound(viewer.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 0.6f, 1f);
             return;
         }
         int delta = switch (type) {

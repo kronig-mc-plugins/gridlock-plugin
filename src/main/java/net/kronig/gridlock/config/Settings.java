@@ -131,6 +131,9 @@ public final class Settings {
     public static final Setting HOME_WARMUP = register(Setting.integer("home.warmup-seconds", Category.HOME, Material.FEATHER,
             "Aufwärmzeit", "Wie lange man nach /home still stehen muss, bevor es losgeht. 0 = sofort.", 3, 0, 30, "s"));
 
+    /** Settings that only take effect at the start of a round; changing them mid-round is refused. */
+    public static final java.util.Set<Setting> LOBBY_ONLY = java.util.Set.of(START_LEVELS, SPAWN_RADIUS);
+
     private final JavaPlugin plugin;
 
     public Settings(JavaPlugin plugin) {
