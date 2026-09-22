@@ -89,16 +89,23 @@ public final class BuybackManager {
         int z = at.getBlockZ();
         int hundredths = refundHundredths(world);
         // Step off first, so nobody stands outside for even a tick.
-        long[] target = fields.nearestNeighbour(world, x, z);
-        if (target == null) {
-            player.sendMessage(Text.prefixed("<red>Kein Nachbarblock zum Ausweichen gefunden."));
+        // The sold column itself must not count, so lock it first and undo if there is nowhere to go.
+        fields.lock(world, x, z);
+        Location destination = fields.safeNearby(world, at, 4, 6);
+        if (destination == null) {
+            long[] target = fields.nearestNeighbour(world, x, z);
+            if (target != null) {
+                destination = FieldManager.safeSpot(world, (int) target[0], (int) target[1], at.getY());
+            }
+        }
+        if (destination == null) {
+            fields.unlock(world, x, z);
+            player.sendMessage(Text.prefixed("<red>Kein sicherer Nachbarblock zum Ausweichen gefunden."));
             return false;
         }
-        Location destination = FieldManager.safeSpot(world, (int) target[0], (int) target[1], at.getY());
         destination.setYaw(at.getYaw());
         destination.setPitch(at.getPitch());
         player.teleport(destination);
-        fields.lock(world, x, z);
         // Fractions of a level go straight into the XP bar as progress towards the next level.
         plugin.levels().refundHundredths(player, hundredths);
         plugin.data().blocksSold++;

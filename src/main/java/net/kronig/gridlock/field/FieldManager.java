@@ -300,14 +300,78 @@ public final class FieldManager {
         return new Location(world, x + 0.5, top + 1, z + 0.5);
     }
 
-    /** Feet block: passable and not dangerous, head passable, ground solid. */
+    /**
+     * The spot inside the field a player outside (or one leaving a sold block) should be put on: the closest
+     * field column within {@code maxRadius} with a safe standing height within {@code maxDy} of the player's own
+     * height. Height differences weigh double, so a spot right next to you on the surface always beats a tunnel
+     * twenty blocks below. Null if there is nothing that close.
+     */
+    public Location safeNearby(World world, Location from, int maxRadius, int maxDy) {
+        int fx = from.getBlockX();
+        int fz = from.getBlockZ();
+        int fy = (int) Math.floor(from.getY());
+        Location best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (int r = 0; r <= maxRadius; r++) {
+            if (best != null && r > bestScore) {
+                break; // no farther column can beat the current best
+            }
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r || !isAllowed(world, fx + dx, fz + dz)) {
+                        continue;
+                    }
+                    for (int off = 0; off <= maxDy; off++) {
+                        Integer found = null;
+                        for (int y : off == 0 ? new int[]{fy} : new int[]{fy + off, fy - off}) {
+                            if (y > world.getMinHeight() && y < world.getMaxHeight() - 1
+                                    && isSafe(world.getBlockAt(fx + dx, y, fz + dz))) {
+                                found = y;
+                                break;
+                            }
+                        }
+                        if (found == null) {
+                            continue;
+                        }
+                        double score = Math.hypot(dx, dz) + Math.abs(found - fy) * 2.0;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            best = new Location(world, fx + dx + 0.5, found, fz + dz + 0.5);
+                        }
+                        break; // nearest height of this column is enough
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** Feet block: free and not dangerous (thin layers like snow or carpet are fine), head free, ground carrying. */
     public static boolean isSafe(Block feet) {
         Block ground = feet.getRelative(0, -1, 0);
         Block head = feet.getRelative(0, 1, 0);
-        return ground.getType().isSolid()
+        return carries(ground)
                 && !isDangerous(ground)
-                && feet.isPassable() && !feet.isLiquid() && !isDangerous(feet)
+                && free(feet) && !feet.isLiquid() && !isDangerous(feet)
                 && head.isPassable() && !head.isLiquid();
+    }
+
+    /** Solid blocks, but also slabs, stairs, paths, farmland: anything with a collision box. */
+    private static boolean carries(Block block) {
+        return block.getType().isSolid() || !block.getCollisionShape().getBoundingBoxes().isEmpty();
+    }
+
+    /** Passable, or a thin layer (snow, carpet, pressure plate) one can stand in. */
+    private static boolean free(Block block) {
+        if (block.isPassable()) {
+            return true;
+        }
+        for (org.bukkit.util.BoundingBox box : block.getCollisionShape().getBoundingBoxes()) {
+            if (box.getMaxY() > 0.3) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isDangerous(Block block) {

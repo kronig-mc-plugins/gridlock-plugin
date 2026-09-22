@@ -305,13 +305,17 @@ public final class BorderListener implements Listener {
     public void rescue(Player player) {
         World world = player.getWorld();
         Location location = player.getLocation();
-        long[] target = fields.nearestAllowed(world, location.getBlockX(), location.getBlockZ(), 8);
-        if (target == null) {
-            target = fields.origin(world);
+        // Closest field spot near the player's own height first; only if there is none, any spot in the column.
+        Location destination = fields.safeNearby(world, location, 8, 10);
+        if (destination == null) {
+            long[] target = fields.nearestAllowed(world, location.getBlockX(), location.getBlockZ(), 8);
+            if (target == null) {
+                target = fields.origin(world);
+            }
+            destination = target == null
+                    ? plugin.game().spawnLocation()
+                    : FieldManager.safeSpot(world, (int) target[0], (int) target[1], location.getY());
         }
-        Location destination = target == null
-                ? plugin.game().spawnLocation()
-                : FieldManager.safeSpot(world, (int) target[0], (int) target[1], location.getY());
         destination.setYaw(location.getYaw());
         destination.setPitch(location.getPitch());
         player.teleport(destination);

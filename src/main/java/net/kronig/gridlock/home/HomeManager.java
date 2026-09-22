@@ -152,12 +152,12 @@ public final class HomeManager {
         Location target = new Location(world, saved.x, saved.y, saved.z, saved.yaw, saved.pitch);
         if (!fields.isAllowed(target)) {
             // The column was sold in the meantime: land on the closest field block instead.
-            long[] nearest = fields.nearestAllowed(world, target.getBlockX(), target.getBlockZ(), 8);
-            if (nearest == null) {
+            Location nearby = fields.safeNearby(world, target, 8, 10);
+            if (nearby == null) {
                 player.sendMessage(Text.prefixed("<red>Dein Home liegt nicht mehr im Feld."));
                 return;
             }
-            target = FieldManager.safeSpot(world, (int) nearest[0], (int) nearest[1], target.getY());
+            target = nearby;
         }
         player.getWorld().spawnParticle(Particle.PORTAL, player.getLocation().add(0, 1, 0), 30, 0.3, 0.6, 0.3, 0.5);
         player.teleport(target);

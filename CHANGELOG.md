@@ -2,6 +2,13 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.8.4] – 2026-09-22
+
+### Behoben
+- **Zurücksetzen und Rückkauf teleportierten manchmal in einen Gang tief unter der Erde**, obwohl direkt daneben Platz war. Die Suche nahm zuerst einen Nachbarblock und dann in genau dieser Säule die nächste sichere Höhe – war die Stelle daneben auf gleicher Höhe nicht „sicher“, ging es in dieser Säule nach unten weiter. Jetzt werden alle Feldblöcke in der Nähe und alle Höhen nahe der eigenen verglichen; Höhenunterschied zählt doppelt, ein Platz auf gleicher Höhe gewinnt also immer gegen einen 20 Blöcke tiefer.
+- Als sicherer Standplatz gelten jetzt auch Schneeschichten, Teppiche, Stufen, Halbblöcke, Wege und Ackerboden.
+- Gilt für Rückkauf, das Zurücksetzen durch den Server und `/home`, wenn das Home nicht mehr im Feld liegt.
+
 ## [1.8.3] – 2026-09-22
 
 ### Geändert
