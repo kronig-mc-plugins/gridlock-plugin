@@ -5,6 +5,7 @@ Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](h
 ## [1.8.1] – 2026-09-22
 
 ### Hinzugefügt
+- **MIT-Lizenz**: Der Code darf frei verwendet, verändert und weitergegeben werden.
 - **GitHub Actions**: Jeder Push baut die Jar automatisch (als Artefakt am Workflow-Lauf), jeder Tag `v*` erzeugt ein Release mit fertiger Jar zum Herunterladen.
 - **Einstellungen nur in der Lobby**: Start-Level und Spawn-Suchradius wirken nur beim Start und lassen sich während einer Runde nicht mehr ändern – im Menü rot markiert, per Befehl abgelehnt. Die Spawn-Abstimmung war schon vorher nur in der Lobby möglich, das Menü sagt jetzt klar warum.
 

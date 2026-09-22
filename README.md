@@ -97,3 +97,7 @@ Fertige Jars liegen unter [Releases](https://github.com/kronig-mc-plugins/gridlo
 ```
 
 Das Plugin liegt danach in `build/libs/GridLock-<version>.jar`. Gradle lädt JDK 25 automatisch, falls keins installiert ist.
+
+## Lizenz
+
+MIT – mach damit, was du willst. Siehe [LICENSE](LICENSE).
