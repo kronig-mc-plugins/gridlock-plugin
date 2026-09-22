@@ -17,7 +17,8 @@ Wer schleichend gegen die Border drückt, kauft für Level den nächsten Block. 
    Schleichen + gegen die Border drücken, ca. 1 Sekunde halten (Fortschrittsbalken, die ganze Border wird orange → gelb → grün) → Block frei, Level weg, kurzer grüner Blitz.
    Abbauen und Bauen **außerhalb** des Feldes ist erlaubt, nur hinüberlaufen nicht. Die Border gilt für alle außer Zuschauer (auch im Kreativmodus).
    Fahrzeuge (Minecart, Boot, Pferd) fahren an der Border ohne dich weiter, du bleibst im Feld.
-4. **Ende**: Enderdrache tot → gewonnen (Timer stoppt). Im Hardcore-Modus: einer stirbt → verloren.
+4. **Ende**: Enderdrache tot → gewonnen: Feuerwerk, Auswertung im Chat, Eintrag in der Bestenliste. Im Hardcore-Modus: einer stirbt → verloren, alle werden Zuschauer (`/gl spectate`).
+   Zwischendurch starten zufällige **Bonus-Events** (halber Preis, Gratis-Block, doppelte Zeit-Level, XP-Rausch).
 5. **Neue Runde**: `/gl reset` löscht Oberwelt/Nether/End und fährt den Server herunter. Beim nächsten Start gibt es eine frische Welt und es geht zurück in die Lobby.
 
 ## Dimensionen
@@ -42,6 +43,11 @@ Jedes Portal, das an einer neuen Stelle ankommt, öffnet dort ein neues 1x1.
 | `/gl info` | alle | Feldgrößen, Kosten, Timer |
 | `/gl pay [spieler] [level]` | alle | Level überweisen (Modus „Überweisen“, ohne Argumente: Menü) |
 | `/gl scoreboard` | alle | Eigenes Scoreboard an/aus |
+| `/gl sell` | alle | Block unter dir verkaufen (Randblock, Teil-Erstattung) |
+| `/gl stats` | alle | Statistiken dieser Runde und Bestenliste |
+| `/gl spectate [spieler]` | Zuschauer | Zu einem Spieler springen |
+| `/sethome` · `/home` | alle | Eigener Home-Punkt im Feld |
+| `/gl bonus [typ\|stop]` | Admin | Bonus sofort starten |
 | `/timer` | alle | Timer anzeigen |
 | `/timer pause\|resume\|reset` · `/timer set\|add\|remove [zeit]` | Admin | Timer steuern (Zeit z. B. `1:30:00`, `45m`, `2h`) |
 | `/gl level [spieler\|pool\|alle] [set\|add\|remove] [n]` | Admin | Level anpassen |
@@ -55,12 +61,14 @@ Aliase: `/gridlock`, `/gl`, `/grid`. Permission: `gridlock.admin` (Standard: OP)
 
 Alles ist per GUI **und** per `/gl config` änderbar und wird in `plugins/GridLock/config.yml` gespeichert.
 
-- **Erweitern**: Haltezeit, Grundkosten, Kostenaufschlag (+X Level alle N Blöcke), Meilenstein-Nachrichten
+- **Erweitern**: Haltezeit, Grundkosten, Kostenaufschlag (+X Level alle N Blöcke), Meilensteine, Rückkauf an/aus und Rückkauf-Anteil
 - **Level**: Bezahlmodus (Jeder für sich / Team-Pool mit geteilter XP-Leiste / Jeder für sich + Überweisen), Vanilla-XP an/aus, Zeit-Level (alle X Minuten Y Level), Start-Level
 - **Timer**: Actionbar, Scoreboard, läuft ohne Spieler
 - **Dimensionen**: Kosten-Multiplikator Nether/End, Radius der freien Drachen-Insel
-- **Tod**: Normal / Hardcore
-- **Border**: harter Stopp, Farbe, Glow-Höhe, Glow-Stärke, Linien-Dicke, Sichtweite, Monster dürfen ins Feld
+- **Tod**: Normal / Hardcore, Prozent der Level, die man beim Tod behält
+- **Border**: harter Stopp, Farbe, Glow-Höhe, Glow-Stärke, Vorhang-Anteil, Hochziehen bis, Linien-Dicke, Sichtweite, Monster dürfen ins Feld
+- **Boni**: an/aus, Abstand, Dauer
+- **Home**: an/aus, Abklingzeit, Aufwärmzeit
 - **Spawn**: Suchradius
 - **MOTD**: an/aus, Stats in der Rotation, Wechselintervall, Hover-Infos, Server-Icon. Die Sprüche stehen unter `motd.slogans` in der config.yml (MiniMessage-Format).
 

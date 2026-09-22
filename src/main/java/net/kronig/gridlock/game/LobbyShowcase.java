@@ -43,7 +43,7 @@ import java.util.UUID;
  */
 public final class LobbyShowcase implements Listener {
 
-    private static final double STATION_RADIUS = 11;
+    private static final double STATION_RADIUS = 13;
     private static final int STATION_COUNT = SpawnPreset.values().length + 1; // + ready pillar
     private static final float CUBE_SCALE = 1.6f;
     private static final float CAGE_SCALE = 2.25f;

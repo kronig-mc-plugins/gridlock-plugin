@@ -12,16 +12,19 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public final class SpawnMenu extends Gui {
 
-    private static final int[] PRESET_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
+    private static final int[] PRESET_SLOTS = {
+            10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34
+    };
 
     public SpawnMenu(GridLockPlugin plugin, Player viewer) {
-        super(plugin, viewer, 5, "<dark_gray>» <aqua><bold>Spawn wählen</bold></aqua>");
+        super(plugin, viewer, 6, "<dark_gray>» <aqua><bold>Spawn wählen</bold></aqua>");
     }
 
     @Override
@@ -76,21 +79,21 @@ public final class SpawnMenu extends Gui {
             });
         }
 
-        set(36, ItemBuilder.of(Material.ARROW).name("<yellow>« Menü").build(), type -> {
+        set(45, ItemBuilder.of(Material.ARROW).name("<yellow>« Menü").build(), type -> {
             click();
             new MainMenu(plugin, viewer).open();
         });
         if (voting && myVote != null) {
-            set(38, ItemBuilder.of(Material.MILK_BUCKET).name("<gray>Stimme zurückziehen").build(), type -> {
+            set(47, ItemBuilder.of(Material.MILK_BUCKET).name("<gray>Stimme zurückziehen").build(), type -> {
                 click();
                 plugin.game().vote(viewer, null);
                 refresh();
             });
         }
-        set(40, ItemBuilder.of(Material.BARRIER).name("<red>Schließen").build(), type -> viewer.closeInventory());
+        set(49, ItemBuilder.of(Material.BARRIER).name("<red>Schließen").build(), type -> viewer.closeInventory());
         if (voting) {
             boolean ready = plugin.game().isReady(viewer);
-            set(44, ItemBuilder.of(ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE).glow(ready)
+            set(53, ItemBuilder.of(ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE).glow(ready)
                     .name(ready ? "<green><bold>Bereit ✔" : "<yellow><bold>Bereit machen")
                     .lore("<gray>Bereit: <white>" + plugin.game().readyCount() + "<gray>/<white>" + Bukkit.getOnlinePlayers().size())
                     .lore("<gray>Spawn-Favorit: <white>" + leader.displayName())
@@ -109,7 +112,7 @@ public final class SpawnMenu extends Gui {
     }
 
     private static Map<SpawnPreset, List<String>> votersByPreset(GameData data) {
-        Map<SpawnPreset, List<String>> result = new java.util.EnumMap<>(SpawnPreset.class);
+        Map<SpawnPreset, List<String>> result = new EnumMap<>(SpawnPreset.class);
         data.votes.forEach((uuid, presetName) -> {
             SpawnPreset preset = SpawnPreset.parse(presetName);
             if (preset == null) {

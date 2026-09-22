@@ -61,6 +61,24 @@ public final class ExpansionManager {
     private final Map<UUID, Long> cooldownUntil = new HashMap<>();
     private final Map<UUID, Long> lastHint = new HashMap<>();
     private long tick;
+    private java.util.function.Predicate<Player> freeBlock = player -> false;
+    private java.util.function.Consumer<Player> freeBlockUsed = player -> {
+    };
+    private java.util.function.Consumer<UUID> boughtListener = player -> {
+    };
+
+    /** Hooks for bonuses (free block) and statistics. */
+    public void setHooks(java.util.function.Predicate<Player> freeBlock, java.util.function.Consumer<Player> freeBlockUsed,
+                         java.util.function.Consumer<UUID> boughtListener) {
+        this.freeBlock = freeBlock;
+        this.freeBlockUsed = freeBlockUsed;
+        this.boughtListener = boughtListener;
+    }
+
+    /** Price for this player right now (0 while a free block bonus is unused). */
+    public int costFor(Player player) {
+        return freeBlock.test(player) ? 0 : fields.nextCost(player.getWorld());
+    }
 
     public ExpansionManager(Settings settings, FieldManager fields, LevelManager levels, ActionBars actionBars) {
         this.settings = settings;
@@ -103,9 +121,9 @@ public final class ExpansionManager {
             return;
         }
         lastHint.put(player.getUniqueId(), now);
-        int cost = fields.nextCost(player.getWorld());
+        int cost = costFor(player);
         actionBars.show(player, Text.mm("<red>▌ Border</red> <gray>– <white>schleichen</white> + dagegen drücken zum Erweitern <dark_gray>(</dark_gray>"
-                + "<green>" + cost + " Level</green><dark_gray>)</dark_gray>"), 2000);
+                + "<green>" + (cost == 0 ? "gratis" : cost + " Level") + "</green><dark_gray>)</dark_gray>"), 2000);
     }
 
     /**
@@ -174,7 +192,7 @@ public final class ExpansionManager {
                 iterator.remove();
                 continue;
             }
-            int cost = fields.nextCost(player.getWorld());
+            int cost = costFor(player);
             if (levels.available(player) < cost) {
                 iterator.remove();
                 cooldownUntil.put(player.getUniqueId(), tick + 20);
@@ -187,7 +205,7 @@ public final class ExpansionManager {
             push.progress++;
             double progress = progress(push);
             actionBars.show(player, Text.mm("<gold>Erweitere…</gold> " + Text.progressBar(progress, 12, "green", "dark_gray")
-                    + " <gray>" + cost + " Level"), 500);
+                    + " <gray>" + (cost == 0 ? "gratis" : cost + " Level")), 500);
             if (push.progress % 4 == 0) {
                 // Everyone hears the rising tone while the border is being pushed, no matter how far away they
                 // are: it is played at each listener's own position.
@@ -212,7 +230,12 @@ public final class ExpansionManager {
         if (!levels.tryPay(player, cost)) {
             return;
         }
+        if (cost == 0 && freeBlock.test(player)) {
+            freeBlockUsed.accept(player);
+            player.sendMessage(Text.prefixed("<green>Gratis-Block eingelöst!"));
+        }
         fields.unlock(world, push.x, push.z);
+        boughtListener.accept(player.getUniqueId());
         int size = fields.size(world);
 
         Location center = new Location(world, push.x + 0.5, player.getY() + 1, push.z + 0.5);
@@ -232,9 +255,8 @@ public final class ExpansionManager {
         if (settings.bool(Settings.MILESTONES) && isMilestone(size)) {
             Bukkit.broadcast(Text.prefixed("<gold>★</gold> Das Feld im <white>" + dimensionName(world)
                     + "</white> ist jetzt <gold><bold>" + size + " Blöcke</bold></gold> groß!"));
-            for (Player online : Bukkit.getOnlinePlayers()) {
-                online.playSound(online.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
-            }
+            net.kronig.gridlock.util.Effects.celebrate("<gold><bold>" + size + " Blöcke!",
+                    "<gray>Meilenstein im " + dimensionName(world), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.2f);
         }
     }
 

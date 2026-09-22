@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 
 /** Holds the unlocked columns of every world and answers "may a player stand here?". */
@@ -25,6 +26,7 @@ public final class FieldManager {
     private final Map<String, Set<Long>> fields = new HashMap<>();
     private Consumer<World> unlockListener = world -> {
     };
+    private IntUnaryOperator costModifier = cost -> cost;
     private ColumnListener columnListener = (world, x, z, unlocked) -> {
     };
 
@@ -156,19 +158,91 @@ public final class FieldManager {
         return total;
     }
 
-    /** Level cost of the next block in this world. */
+    /** Level cost of the next block in this world, including an active bonus. */
     public int nextCost(World world) {
+        return costModifier.applyAsInt(costAt(world, size(world)));
+    }
+
+    /** Cost of the block bought when {@code size} blocks are already unlocked (no bonus applied). */
+    public int costAt(World world, int size) {
         int base = settings.integer(Settings.COST_BASE);
         int increase = settings.integer(Settings.COST_INCREASE);
         int every = settings.integer(Settings.COST_INCREASE_EVERY);
-        int unlocked = Math.max(0, size(world) - 1);
+        int unlocked = Math.max(0, size - 1);
         int cost = base + (unlocked / every) * increase;
-        int multiplier = switch (world.getEnvironment()) {
+        return cost * dimensionMultiplier(world);
+    }
+
+    public int dimensionMultiplier(World world) {
+        return switch (world.getEnvironment()) {
             case NETHER -> settings.integer(Settings.NETHER_MULTIPLIER);
             case THE_END -> settings.integer(Settings.END_MULTIPLIER);
             default -> 1;
         };
-        return cost * multiplier;
+    }
+
+    /** Lets bonuses change the price of the next block. */
+    public void setCostModifier(IntUnaryOperator modifier) {
+        this.costModifier = modifier;
+    }
+
+    /** True only for bought columns (the free End island does not count). */
+    public boolean isUnlocked(World world, int x, int z) {
+        Set<Long> columns = fields.get(world.getName());
+        return columns != null && columns.contains(pack(x, z));
+    }
+
+    public boolean isOrigin(World world, int x, int z) {
+        Long origin = data.get().fieldOrigins.get(world.getName());
+        return origin != null && origin == pack(x, z);
+    }
+
+    /** A column with at least one locked neighbour. */
+    public boolean isEdge(World world, int x, int z) {
+        return !isAllowed(world, x + 1, z) || !isAllowed(world, x - 1, z)
+                || !isAllowed(world, x, z + 1) || !isAllowed(world, x, z - 1);
+    }
+
+    /** Would the field of this world still be one connected piece without the column? */
+    public boolean staysConnected(World world, int x, int z) {
+        Set<Long> columns = fields.get(world.getName());
+        if (columns == null || columns.size() <= 1) {
+            return false;
+        }
+        long removed = pack(x, z);
+        Set<Long> seen = new HashSet<>();
+        java.util.ArrayDeque<Long> queue = new java.util.ArrayDeque<>();
+        for (long column : columns) {
+            if (column != removed) {
+                queue.add(column);
+                seen.add(column);
+                break;
+            }
+        }
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!queue.isEmpty()) {
+            long current = queue.poll();
+            int cx = unpackX(current);
+            int cz = unpackZ(current);
+            for (int[] dir : directions) {
+                long next = pack(cx + dir[0], cz + dir[1]);
+                if (next != removed && columns.contains(next) && seen.add(next)) {
+                    queue.add(next);
+                }
+            }
+        }
+        return seen.size() == columns.size() - 1;
+    }
+
+    /** An unlocked neighbour column to step onto, or null. */
+    public long[] nearestNeighbour(World world, int x, int z) {
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] dir : directions) {
+            if (isUnlocked(world, x + dir[0], z + dir[1])) {
+                return new long[]{x + dir[0], z + dir[1]};
+            }
+        }
+        return null;
     }
 
     /** Finds the closest allowed column (in blocks, Chebyshev rings) or null. */

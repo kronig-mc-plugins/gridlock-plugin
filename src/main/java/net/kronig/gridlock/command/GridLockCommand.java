@@ -31,10 +31,10 @@ import java.util.stream.Stream;
 public final class GridLockCommand implements BasicCommand {
 
     private static final List<String> SUBCOMMANDS = List.of(
-            "menu", "settings", "config", "spawn", "vote", "ready", "info", "pay", "scoreboard", "help",
-            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup");
+            "menu", "settings", "config", "spawn", "vote", "ready", "info", "pay", "scoreboard", "sell", "stats",
+            "spectate", "help", "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup", "bonus");
     private static final List<String> ADMIN_SUBCOMMANDS = List.of(
-            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup");
+            "forcestart", "reset", "reload", "level", "playtime", "unlock", "lock", "cleanup", "bonus");
     private static final int MAX_FIELD_RADIUS = 25;
 
     private final GridLockPlugin plugin;
@@ -60,6 +60,20 @@ public final class GridLockCommand implements BasicCommand {
             case "info" -> info(sender);
             case "pay", "überweisen", "ueberweisen" -> pay(sender, args);
             case "scoreboard", "sb" -> ifPlayer(sender, this::toggleScoreboard);
+            case "sell", "verkaufen" -> ifPlayer(sender, player -> plugin.buyback().sell(player));
+            case "stats", "statistik" -> stats(sender);
+            case "spectate", "zuschauen" -> ifPlayer(sender, player -> spectate(player, args));
+            case "bonus" -> {
+                if (args.length >= 2 && args[1].equalsIgnoreCase("stop")) {
+                    if (plugin.bonus().active() == null) {
+                        sender.sendMessage(Text.prefixed("<gray>Es läuft gerade kein Bonus."));
+                    } else {
+                        plugin.bonus().end();
+                    }
+                } else {
+                    plugin.bonus().force(sender, args.length >= 2 ? net.kronig.gridlock.bonus.BonusType.parse(args[1]) : null);
+                }
+            }
             case "level" -> level(sender, args);
             case "playtime", "spielzeit" -> playtime(sender, args);
             case "ready", "bereit", "start" -> {
@@ -211,6 +225,36 @@ public final class GridLockCommand implements BasicCommand {
         });
     }
 
+    private void stats(CommandSender sender) {
+        if (sender instanceof Player player) {
+            new net.kronig.gridlock.gui.StatsMenu(plugin, player).open();
+            return;
+        }
+        sender.sendMessage(Text.prefixed("<gold><bold>Diese Runde"));
+        for (String line : plugin.stats().summaryLines()) {
+            sender.sendMessage(Text.mm(line));
+        }
+    }
+
+    private void spectate(Player player, String[] args) {
+        if (player.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+            player.sendMessage(Text.prefixed("<red>Zuschauen geht nur im Zuschauermodus."));
+            return;
+        }
+        if (args.length < 2) {
+            new net.kronig.gridlock.gui.SpectateMenu(plugin, player).open();
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null || target.equals(player) || target.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+            player.sendMessage(Text.prefixed("<red>Spieler nicht gefunden oder selbst Zuschauer."));
+            return;
+        }
+        player.teleport(target.getLocation());
+        player.setSpectatorTarget(target);
+        player.sendMessage(Text.prefixed("<gray>Du siehst jetzt <white>" + Text.escape(target.getName()) + "</white> zu."));
+    }
+
     private void toggleScoreboard(Player player) {
         String id = player.getUniqueId().toString();
         boolean hidden = !plugin.data().hiddenSidebar.remove(id);
@@ -354,6 +398,10 @@ public final class GridLockCommand implements BasicCommand {
         sender.sendMessage(Text.mm("<gray>/gl info <dark_gray>– Feld & Timer"));
         sender.sendMessage(Text.mm("<gray>/gl pay [spieler] [level] <dark_gray>– Level überweisen (Modus Überweisen)"));
         sender.sendMessage(Text.mm("<gray>/gl scoreboard <dark_gray>– eigenes Scoreboard an/aus"));
+        sender.sendMessage(Text.mm("<gray>/gl sell <dark_gray>– Block unter dir verkaufen"));
+        sender.sendMessage(Text.mm("<gray>/gl stats <dark_gray>– Statistiken und Bestenliste"));
+        sender.sendMessage(Text.mm("<gray>/gl spectate [spieler] <dark_gray>– als Zuschauer hinspringen"));
+        sender.sendMessage(Text.mm("<gray>/sethome · /home <dark_gray>– eigener Home-Punkt im Feld"));
         sender.sendMessage(Text.mm("<gray>/timer <dark_gray>– Zeit anzeigen"));
         if (isAdmin(sender)) {
             sender.sendMessage(Text.mm("<gold>Admin:"));
@@ -362,6 +410,7 @@ public final class GridLockCommand implements BasicCommand {
             sender.sendMessage(Text.mm("<gray>/gl playtime [spieler] [set|add|remove] [zeit]"));
             sender.sendMessage(Text.mm("<gray>/gl unlock | lock [radius] <dark_gray>– Feld unter dir"));
             sender.sendMessage(Text.mm("<gray>/gl cleanup <dark_gray>– übrig gebliebene Border-Pfosten entfernen"));
+            sender.sendMessage(Text.mm("<gray>/gl bonus [typ|stop] <dark_gray>– Bonus jetzt starten"));
             sender.sendMessage(Text.mm("<gray>/timer pause | resume | reset | set | add | remove [zeit]"));
         }
     }
@@ -384,7 +433,9 @@ public final class GridLockCommand implements BasicCommand {
                 case "pay", "level" -> filter(Stream.concat(
                         sub.equals("level") ? Stream.of("pool", "alle") : Stream.empty(),
                         Bukkit.getOnlinePlayers().stream().map(Player::getName)), current);
-                case "playtime", "spielzeit" -> filter(Bukkit.getOnlinePlayers().stream().map(Player::getName), current);
+                case "playtime", "spielzeit", "spectate", "zuschauen" -> filter(Bukkit.getOnlinePlayers().stream().map(Player::getName), current);
+                case "bonus" -> filter(Stream.concat(Stream.of("stop"), Arrays.stream(net.kronig.gridlock.bonus.BonusType.values())
+                        .map(b -> b.name().toLowerCase(Locale.ROOT))), current);
                 case "unlock", "lock" -> filter(Stream.of("0", "1", "2", "5"), current);
                 case "reset" -> filter(Stream.of("confirm"), current);
                 default -> List.of();

@@ -10,7 +10,9 @@ public enum Category {
     DEATH("Tod", "#ff5555", Material.SKELETON_SKULL, "Was beim Sterben passiert."),
     BORDER("Border", "#ff3b3b", Material.RED_STAINED_GLASS, "Aussehen der Border und Mob-Regeln."),
     SPAWN("Spawn", "#55ffff", Material.COMPASS, "Suche des Startpunkts."),
-    MOTD("MOTD", "#ffff55", Material.OAK_SIGN, "Die Server-Nachricht in der Serverliste.");
+    MOTD("MOTD", "#ffff55", Material.OAK_SIGN, "Die Server-Nachricht in der Serverliste."),
+    BONUS("Boni", "#ff55ff", Material.FIREWORK_ROCKET, "Zufällige Bonus-Events während der Runde."),
+    HOME("Home", "#ffaa55", Material.RED_BED, "/sethome und /home für jeden Spieler.");
 
     private final String displayName;
     private final String color;

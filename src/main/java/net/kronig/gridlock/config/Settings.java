@@ -26,7 +26,12 @@ public final class Settings {
     public static final Setting COST_INCREASE_EVERY = register(Setting.integer("expand.cost-increase-every", Category.EXPAND, Material.LADDER,
             "Aufschlag alle", "Nach wie vielen freigeschalteten Blöcken der Kostenaufschlag greift.", 25, 1, 1000, "Blöcke"));
     public static final Setting MILESTONES = register(Setting.bool("expand.milestone-announcements", Category.EXPAND, Material.GOAT_HORN,
-            "Meilensteine", "Chat-Nachricht und Sound bei 10, 25, 50, 100, ... Blöcken.", true));
+            "Meilensteine", "Titel und Sound bei 10, 25, 50, 100, ... Blöcken.", true));
+    public static final Setting BUYBACK_ENABLED = register(Setting.bool("expand.buyback", Category.EXPAND, Material.EMERALD,
+            "Rückkauf", "Blöcke am Rand des Feldes können wieder verkauft werden (/gl sell oder im Menü). Es gibt nur einen Teil der Level zurück.",
+            true));
+    public static final Setting BUYBACK_PERCENT = register(Setting.integer("expand.buyback-percent", Category.EXPAND, Material.GOLD_NUGGET,
+            "Rückkauf-Anteil", "Wie viel Prozent der Kosten man beim Verkauf eines Blocks zurückbekommt.", 25, 0, 100, "%"));
 
     // Level
     public static final Setting PAYMENT_MODE = register(Setting.choice("levels.payment-mode", Category.LEVELS, Material.GOLD_INGOT,
@@ -63,6 +68,9 @@ public final class Settings {
     // Tod
     public static final Setting DEATH_MODE = register(Setting.choice("death.mode", Category.DEATH, Material.TOTEM_OF_UNDYING,
             "Tod-Modus", "Normal: im Feld respawnen. Hardcore: stirbt einer, ist die Runde für alle vorbei.", DeathMode.NORMAL));
+    public static final Setting DEATH_KEEP_LEVELS = register(Setting.integer("death.keep-levels-percent", Category.DEATH, Material.EXPERIENCE_BOTTLE,
+            "Level behalten", "Wie viel Prozent der eigenen Level man beim Tod behält (nur bei 'Jeder für sich' und 'Überweisen'; im Team-Pool geht nie etwas verloren). 100 = kein Verlust.",
+            50, 0, 100, "%"));
 
     // Border
     public static final Setting BORDER_COLOR = register(Setting.choice("border.color", Category.BORDER, Material.RED_DYE,
@@ -78,6 +86,12 @@ public final class Settings {
     public static final Setting BORDER_LINE_WIDTH = register(Setting.integer("border.line-width", Category.BORDER, Material.STRING,
             "Linien-Dicke", "Dicke der scharfen Linien am Gelände, in Hundertstel-Blöcken (3 = 0,03 Blöcke).",
             3, 1, 20, "/100 Blöcke"));
+    public static final Setting BORDER_CURTAIN_SHARE = register(Setting.integer("border.curtain-share", Category.BORDER, Material.WHITE_STAINED_GLASS_PANE,
+            "Vorhang-Anteil", "Stärke des durchgehenden Schimmers bis zur Oberfläche, in Prozent der Schimmer-Stärke. 0 = nur der Glow direkt über der Linie.",
+            45, 0, 100, "%"));
+    public static final Setting BORDER_CLIMB_LIMIT = register(Setting.integer("border.climb-limit", Category.BORDER, Material.LADDER,
+            "Hochziehen bis", "Steht direkt außerhalb ein höherer Block, läuft die Linie über dessen Oberkante – aber höchstens so viele Blöcke über dem Boden. Ist die Wand höher, bleibt die Linie unten. 0 = immer unten.",
+            3, 0, 20, "Blöcke"));
     public static final Setting BORDER_VIEW = register(Setting.integer("border.view-distance", Category.BORDER, Material.SPYGLASS,
             "Sichtweite", "Bis zu welcher Entfernung die Border gezeichnet wird.", 16, 4, 48, "Blöcke"));
     public static final Setting MOBS_CAN_ENTER = register(Setting.bool("border.mobs-can-enter", Category.BORDER, Material.ZOMBIE_HEAD,
@@ -99,6 +113,23 @@ public final class Settings {
     public static final Setting MOTD_ICON = register(Setting.bool("motd.server-icon", Category.MOTD, Material.ITEM_FRAME,
             "Server-Icon", "Zeigt das GridLock-Icon in der Serverliste. Eigenes Bild: plugins/GridLock/server-icon.png ersetzen und /gl reload.",
             true));
+
+    // Boni
+    public static final Setting BONUS_ENABLED = register(Setting.bool("bonus.enabled", Category.BONUS, Material.FIREWORK_ROCKET,
+            "Bonus-Events", "Alle paar Minuten startet zufällig ein Bonus: halber Preis, Gratis-Block, doppelte Zeit-Level oder XP-Rausch.",
+            true));
+    public static final Setting BONUS_INTERVAL = register(Setting.integer("bonus.interval-minutes", Category.BONUS, Material.CLOCK,
+            "Abstand", "Wie viele Minuten Spielzeit zwischen zwei Boni liegen.", 30, 5, 240, "min"));
+    public static final Setting BONUS_DURATION = register(Setting.integer("bonus.duration-minutes", Category.BONUS, Material.SOUL_TORCH,
+            "Dauer", "Wie lange ein Bonus aktiv bleibt.", 5, 1, 60, "min"));
+
+    // Home
+    public static final Setting HOME_ENABLED = register(Setting.bool("home.enabled", Category.HOME, Material.RED_BED,
+            "Homes", "/sethome setzt einen Punkt im Feld, /home teleportiert dorthin.", true));
+    public static final Setting HOME_COOLDOWN = register(Setting.integer("home.cooldown-seconds", Category.HOME, Material.CLOCK,
+            "Abklingzeit", "Wie viele Sekunden zwischen zwei /home liegen müssen.", 60, 0, 3600, "s"));
+    public static final Setting HOME_WARMUP = register(Setting.integer("home.warmup-seconds", Category.HOME, Material.FEATHER,
+            "Aufwärmzeit", "Wie lange man nach /home still stehen muss, bevor es losgeht. 0 = sofort.", 3, 0, 30, "s"));
 
     private final JavaPlugin plugin;
 

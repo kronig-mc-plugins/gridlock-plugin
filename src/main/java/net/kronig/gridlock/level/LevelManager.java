@@ -36,11 +36,40 @@ public final class LevelManager implements Listener {
     private final Map<UUID, Integer> syncedLevel = new HashMap<>();
     private PaymentMode lastMode;
 
-    public LevelManager(Settings settings, Supplier<GameData> data, Predicate<Player> inChallenge) {
+    private final org.bukkit.plugin.Plugin plugin;
+    private java.util.function.DoubleSupplier xpMultiplier = () -> 1.0;
+    private java.util.function.IntSupplier timeMultiplier = () -> 1;
+    private java.util.function.BiConsumer<UUID, Integer> spentListener = (player, levels) -> {
+    };
+
+    public LevelManager(org.bukkit.plugin.Plugin plugin, Settings settings, Supplier<GameData> data,
+                        Predicate<Player> inChallenge) {
+        this.plugin = plugin;
         this.settings = settings;
         this.data = data;
         this.inChallenge = inChallenge;
         this.lastMode = mode();
+    }
+
+    /** Hooks for bonuses and statistics. */
+    public void setHooks(java.util.function.DoubleSupplier xpMultiplier, java.util.function.IntSupplier timeMultiplier,
+                         java.util.function.BiConsumer<UUID, Integer> spentListener) {
+        this.xpMultiplier = xpMultiplier;
+        this.timeMultiplier = timeMultiplier;
+        this.spentListener = spentListener;
+    }
+
+    /** Gives levels back (buyback): to the pool or to the player. */
+    public void refund(Player player, int levels) {
+        if (levels <= 0) {
+            return;
+        }
+        if (mode() == PaymentMode.POOL) {
+            data.get().poolLevels += levels;
+            sync();
+        } else {
+            player.giveExpLevels(levels);
+        }
     }
 
     public PaymentMode mode() {
@@ -67,12 +96,14 @@ public final class LevelManager implements Listener {
             }
             data.get().poolLevels -= cost;
             sync();
+            spentListener.accept(player.getUniqueId(), cost);
             return true;
         }
         if (player.getLevel() < cost) {
             return false;
         }
         player.giveExpLevels(-cost);
+        spentListener.accept(player.getUniqueId(), cost);
         return true;
     }
 
@@ -108,7 +139,7 @@ public final class LevelManager implements Listener {
     }
 
     public void grantTimeLevels() {
-        int amount = settings.integer(Settings.TIME_AMOUNT);
+        int amount = settings.integer(Settings.TIME_AMOUNT) * timeMultiplier.getAsInt();
         if (mode() == PaymentMode.POOL) {
             data.get().poolLevels += amount;
             sync();
@@ -238,6 +269,9 @@ public final class LevelManager implements Listener {
             event.setAmount(0);
             return;
         }
+        if (event.getAmount() > 0) {
+            event.setAmount((int) Math.round(event.getAmount() * xpMultiplier.getAsDouble()));
+        }
         if (mode() != PaymentMode.POOL || event.getAmount() <= 0) {
             return;
         }
@@ -246,13 +280,44 @@ public final class LevelManager implements Listener {
         addPoolPoints(points);
     }
 
-    /** The pool is shared, so a death must not wipe or drop it. */
+    /**
+     * The pool is shared, so a death must not wipe or drop it. With own levels, the configured share is kept
+     * instead of vanilla's near-total loss.
+     */
     @EventHandler(priority = EventPriority.HIGH)
     public void onDeath(PlayerDeathEvent event) {
-        if (ingame() && mode() == PaymentMode.POOL) {
+        if (!ingame()) {
+            return;
+        }
+        Player player = event.getPlayer();
+        if (mode() == PaymentMode.POOL) {
             event.setKeepLevel(true);
             event.setDroppedExp(0);
+            return;
         }
+        int percent = settings.integer(Settings.DEATH_KEEP_LEVELS);
+        if (percent >= 100) {
+            event.setKeepLevel(true);
+            event.setDroppedExp(0);
+            return;
+        }
+        if (percent <= 0) {
+            return; // vanilla behaviour
+        }
+        int before = player.getLevel();
+        int keep = Math.floorDiv(before * percent, 100);
+        event.setKeepLevel(true);
+        event.setDroppedExp(0);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (player.isOnline()) {
+                player.setExp(0f);
+                player.setLevel(keep);
+                if (before > 0) {
+                    player.sendMessage(Text.prefixed("<gray>Du hast <red>" + (before - keep) + " Level</red> verloren und <green>"
+                            + keep + "</green> behalten <dark_gray>(" + percent + " %)"));
+                }
+            }
+        });
     }
 
     private void addPoolPoints(int points) {

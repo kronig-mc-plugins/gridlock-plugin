@@ -36,4 +36,30 @@ public final class GameData {
     public double spawnZ;
 
     public String finishInfo;
+
+    // ---- round statistics (player UUID -> value)
+    public Map<String, Integer> blocksBought = new HashMap<>();
+    public Map<String, Integer> deaths = new HashMap<>();
+    public Map<String, Integer> levelsSpent = new HashMap<>();
+    public int blocksSold;
+    public long roundStartedEpoch;
+
+    // ---- bonus events (times in challenge-timer seconds)
+    public String activeBonus;
+    public long bonusEndsAt;
+    public long nextBonusAt;
+    public Set<String> freeBlockUsed = new HashSet<>();
+
+    // ---- homes
+    public Map<String, SavedLocation> homes = new HashMap<>();
+    public Map<String, Long> lastHomeUse = new HashMap<>();
+
+    public static final class SavedLocation {
+        public String world;
+        public double x;
+        public double y;
+        public double z;
+        public float yaw;
+        public float pitch;
+    }
 }

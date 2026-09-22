@@ -86,8 +86,6 @@ public final class BorderLines {
     private static final int SCAN = 40;
     /** Share of the total glow height and of the strength per band, from the line upwards. */
     private static final double[][] FADE_BANDS = {{0.25, 1.0}, {0.3, 0.55}, {0.45, 0.2}};
-    /** Strength of the full-height curtain relative to the glow right above the line. */
-    private static final float CURTAIN_SHARE = 0.45f;
     private static final long FLASH_MS = 900;
     private static final Color[] PUSH_STAGES = {
             Color.fromRGB(255, 140, 0), Color.fromRGB(255, 225, 40), Color.fromRGB(70, 235, 70)
@@ -237,7 +235,8 @@ public final class BorderLines {
      * blocks standing right outside it. A wall that fills the whole air space (a tunnel) has no top to run along,
      * so the line stays on the floor there.
      */
-    private static int lineHeight(World world, int outerX, int outerZ, Gap gap) {
+    private int lineHeight(World world, int outerX, int outerZ, Gap gap) {
+        int limit = settings.integer(Settings.BORDER_CLIMB_LIMIT) * 1000;
         int height = gap.bottom();
         int firstY = Math.floorDiv(gap.bottom() - 1, 1000);
         for (int y = firstY; y <= firstY + SCAN; y++) {
@@ -253,7 +252,8 @@ public final class BorderLines {
             }
             height = Math.max(height, extent[1]);
         }
-        return height >= gap.top() ? gap.bottom() : height;
+        // Walls higher than the limit (or filling the whole air space) keep the line on the floor.
+        return height >= gap.top() || height - gap.bottom() > limit ? gap.bottom() : height;
     }
 
     /** Vertical pieces joining the floor lines of different edges at a corner, wherever their air spaces touch. */
@@ -405,7 +405,7 @@ public final class BorderLines {
             bandBottom = bandTop;
         }
         // Faint curtain over the whole air space, so the border stays readable on tall staircases and in shafts.
-        int faint = Math.round(strength * CURTAIN_SHARE);
+        int faint = Math.round(strength * settings.integer(Settings.BORDER_CURTAIN_SHARE) / 100f);
         if (faint > 0) {
             double curtainBottom = run.curtainBottom() / 1000.0;
             double curtainTop = run.curtainTop() / 1000.0;

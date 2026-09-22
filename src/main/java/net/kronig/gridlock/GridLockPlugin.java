@@ -17,6 +17,10 @@ import net.kronig.gridlock.game.Lobby;
 import net.kronig.gridlock.gui.GuiListener;
 import net.kronig.gridlock.level.LevelManager;
 import net.kronig.gridlock.mod.ModLink;
+import net.kronig.gridlock.bonus.BonusManager;
+import net.kronig.gridlock.stats.StatsManager;
+import net.kronig.gridlock.field.BuybackManager;
+import net.kronig.gridlock.home.HomeManager;
 import net.kronig.gridlock.timer.TimerManager;
 import net.kronig.gridlock.ui.ActionBars;
 import net.kronig.gridlock.ui.MotdManager;
@@ -54,6 +58,10 @@ public final class GridLockPlugin extends JavaPlugin {
     private ShulkerWall shulkerWall;
     private HardStop hardStop;
     private ModLink modLink;
+    private BonusManager bonus;
+    private StatsManager stats;
+    private BuybackManager buyback;
+    private HomeManager homes;
     private boolean linesDirty;
     private GameController game;
     private TimerManager timer;
@@ -91,7 +99,7 @@ public final class GridLockPlugin extends JavaPlugin {
 
         fields = new FieldManager(settings, this::data, lobby::world);
         fields.loadFrom(data);
-        levels = new LevelManager(settings, this::data, player -> fields.isChallengeWorld(player.getWorld()));
+        levels = new LevelManager(this, settings, this::data, player -> fields.isChallengeWorld(player.getWorld()));
         actionBars = new ActionBars();
         expansion = new ExpansionManager(settings, fields, levels, actionBars);
         borderListener = new BorderListener(this, fields, expansion);
@@ -100,6 +108,13 @@ public final class GridLockPlugin extends JavaPlugin {
         shulkerWall = new ShulkerWall(this);
         hardStop = new HardStop(this, fields);
         modLink = new ModLink(this, fields, expansion);
+        bonus = new BonusManager(this);
+        stats = new StatsManager(this);
+        buyback = new BuybackManager(this, fields);
+        homes = new HomeManager(this, fields);
+        fields.setCostModifier(bonus::adjustCost);
+        levels.setHooks(bonus::xpMultiplier, bonus::timeLevelMultiplier, stats::countLevels);
+        expansion.setHooks(bonus::hasFreeBlock, bonus::useFreeBlock, stats::countBlock);
         modLink.register();
         fields.onColumnChange(modLink::onFieldChange);
         borderLines.setModHooks(modLink::hasMod, modLink::hideFromModPlayers);
@@ -143,6 +158,8 @@ public final class GridLockPlugin extends JavaPlugin {
         registerCommand("gridlock", "GridLock-Menü, Einstellungen und Verwaltung", List.of("gl", "grid"),
                 new GridLockCommand(this));
         registerCommand("timer", "Challenge-Timer anzeigen und steuern", new TimerCommand(this));
+        registerCommand("sethome", "Setzt deinen Home-Punkt im Feld", homes.setHomeCommand());
+        registerCommand("home", "Teleportiert dich zu deinem Home", homes.homeCommand());
 
         var scheduler = Bukkit.getScheduler();
         scheduler.runTaskTimer(this, expansion::tick, 1L, 1L);
@@ -229,6 +246,7 @@ public final class GridLockPlugin extends JavaPlugin {
         borderListener.forget(player);
         hardStop.forget(player);
         modLink.forget(player);
+        homes.forget(player);
         actionBars.forget(player);
         sidebar.forget(player);
         levels.forget(player);
@@ -236,6 +254,22 @@ public final class GridLockPlugin extends JavaPlugin {
 
     public SidebarManager sidebar() {
         return sidebar;
+    }
+
+    public BonusManager bonus() {
+        return bonus;
+    }
+
+    public StatsManager stats() {
+        return stats;
+    }
+
+    public BuybackManager buyback() {
+        return buyback;
+    }
+
+    public HomeManager homes() {
+        return homes;
     }
 
     public ModLink modLink() {

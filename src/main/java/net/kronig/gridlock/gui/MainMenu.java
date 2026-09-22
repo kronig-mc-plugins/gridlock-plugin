@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 
 public final class MainMenu extends Gui {
 
-    private static final int[] CATEGORY_SLOTS = {10, 12, 14, 16, 28, 30, 32, 34};
+    private static final int[] CATEGORY_SLOTS = {10, 12, 14, 16, 19, 21, 23, 25, 30, 32};
 
     public MainMenu(GridLockPlugin plugin, Player viewer) {
         super(plugin, viewer, 6, "<dark_gray>» <gradient:#ff3b3b:#ff9e3b><bold>GridLock</bold></gradient> <dark_gray>Menü");
@@ -71,6 +71,40 @@ public final class MainMenu extends Gui {
 
         set(49, ItemBuilder.of(Material.BARRIER).name("<red>Schließen").build(), type -> viewer.closeInventory());
 
+        set(48, ItemBuilder.of(Material.WRITABLE_BOOK)
+                .name("<gold><bold>Statistiken")
+                .description("Blöcke, Level, Tode und Spielzeit dieser Runde – und die Bestenliste.")
+                .lore("")
+                .lore("<yellow>▶ Klick zum Öffnen")
+                .build(), type -> {
+            click();
+            new StatsMenu(plugin, viewer).open();
+        });
+        if (viewer.getGameMode() == org.bukkit.GameMode.SPECTATOR && data.state.isIngame()) {
+            set(50, ItemBuilder.of(Material.ENDER_EYE).glow(true)
+                    .name("<aqua><bold>Zuschauen")
+                    .description("Zu einem Spieler springen, der noch spielt.")
+                    .lore("")
+                    .lore("<yellow>▶ Klick zum Öffnen")
+                    .build(), type -> {
+                click();
+                new SpectateMenu(plugin, viewer).open();
+            });
+        } else if (plugin.buyback().enabled() && data.state == GameState.RUNNING
+                && plugin.fields().isRestricted(viewer)) {
+            set(50, ItemBuilder.of(Material.EMERALD)
+                    .name("<gold><bold>Block verkaufen")
+                    .description("Verkauft den Block, auf dem du stehst, für " + plugin.settings().integer(
+                            net.kronig.gridlock.config.Settings.BUYBACK_PERCENT) + " % seiner Kosten.")
+                    .lore("")
+                    .lore("<gray>Rückerstattung: <green>+" + plugin.buyback().refund(viewer.getWorld()) + " Level")
+                    .lore("<yellow>▶ Klick (mit Bestätigung)")
+                    .build(), type -> {
+                click();
+                new ConfirmSellMenu(plugin, viewer).open();
+            });
+        }
+
         boolean sidebarHidden = data.hiddenSidebar.contains(viewer.getUniqueId().toString());
         set(46, ItemBuilder.of(sidebarHidden ? Material.GRAY_DYE : Material.LIME_DYE)
                 .name("<white><bold>Dein Scoreboard: " + (sidebarHidden ? "<red>AUS" : "<green>AN"))
@@ -102,6 +136,8 @@ public final class MainMenu extends Gui {
                 .lore("<gray>/gl spawn <dark_gray>– Spawn-Auswahl")
                 .lore("<gray>/gl info <dark_gray>– Feld-Infos")
                 .lore("<gray>/gl pay [spieler] [level] <dark_gray>– überweisen")
+                .lore("<gray>/gl sell <dark_gray>– Block verkaufen")
+                .lore("<gray>/sethome · /home")
                 .lore("<gray>/gl scoreboard <dark_gray>– Scoreboard an/aus")
                 .lore("<gray>/gl help <dark_gray>– alle Befehle (inkl. Admin)")
                 .build());

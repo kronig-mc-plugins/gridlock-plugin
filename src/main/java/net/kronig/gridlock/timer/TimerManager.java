@@ -30,6 +30,7 @@ public final class TimerManager {
             // Time levels only accrue while someone plays – the pool must not grow on an empty server.
             if (anyoneOnline) {
                 tickTimeLevels(data);
+                plugin.bonus().tickSecond();
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.lobby().isLobby(player.getWorld())) {

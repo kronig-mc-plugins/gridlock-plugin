@@ -212,6 +212,15 @@ public final class BorderListener implements Listener {
         Bukkit.broadcast(Text.prefixed((firstInWorld ? "<light_purple>Neue Dimension!</light_purple> " : "")
                 + "<gray>Portal-Feld im <white>" + dimension + "</white> bei <white>" + location.getBlockX() + ", "
                 + location.getBlockZ() + "</white> freigeschaltet <dark_gray>(" + columns.size() + " Blöcke)"));
+        int multiplier = fields.dimensionMultiplier(world);
+        String costs = "<gray>Blöcke kosten hier <white>" + fields.nextCost(world) + " Level</white>"
+                + (multiplier > 1 ? " <dark_gray>(×" + multiplier + ")" : "");
+        if (firstInWorld) {
+            net.kronig.gridlock.util.Effects.celebrate("<light_purple><bold>" + dimension + "!",
+                    costs, org.bukkit.Sound.BLOCK_PORTAL_TRAVEL, 1.6f);
+        } else {
+            net.kronig.gridlock.util.Effects.title(player, "<light_purple>" + dimension, costs, 2000);
+        }
     }
 
     // ------------------------------------------------------------------ vehicles & mobs

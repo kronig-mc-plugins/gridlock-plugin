@@ -2,6 +2,25 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.8.0] – 2026-09-22
+
+### Hinzugefügt
+- **Bonus-Events**: Alle 30 Minuten (einstellbar) startet für 5 Minuten zufällig ein Bonus – *Halber Preis*, *Gratis-Block* (einer pro Spieler), *Doppelte Zeit-Level* oder *XP-Rausch*. Mit Titel, Sound und Zeile im Scoreboard. Admins: `/gl bonus [typ|stop]`. Kategorie **Boni** im Menü.
+- **Rückkauf**: `/gl sell` oder Menü → „Block verkaufen“ gibt den Block unter dir wieder frei und erstattet einen Teil der Kosten (Standard 25 %, einstellbar). Nur Randblöcke, nicht der Startblock, nie so, dass das Feld auseinanderbricht, nie unter einem anderen Spieler.
+- **Level-Verlust beim Tod einstellbar**: Standard behält man 50 % der eigenen Level (Kategorie Tod). Im Team-Pool geht weiterhin nichts verloren.
+- **Statistiken und Rundenende**: Blöcke, ausgegebene Level, Tode und Spielzeit pro Spieler (`/gl stats`, Menü). Beim Drachenkill: Feuerwerk, Titel und eine Auswertung im Chat. Beim Scheitern ebenfalls eine Auswertung. Alle Runden landen in `stats.json`, die Bestenliste zeigt die schnellsten Siege.
+- **Zuschauer-Menü**: Ausgeschiedene springen mit `/gl spectate` oder im Menü per Spielerkopf zu Mitspielern, ein zweiter Klick heftet die Kamera an.
+- **/sethome und /home** für jeden Spieler, nur im Feld. Abklingzeit und Aufwärmzeit (still stehen) einstellbar, Kategorie **Home**. Liegt das Home nicht mehr im Feld, landet man auf dem nächsten Feldblock.
+- **Sechs neue Spawns**: Dorf (am Dorfrand), Savanne, Dunkler Wald, Strand, Höhle (unter der Erde), Eiszapfen. Die Lobby bekommt entsprechend mehr Säulen.
+- **Kosten pro Dimension sichtbar**: Beim Betreten von Nether oder End zeigt ein Titel, was Blöcke dort kosten; das Scoreboard zeigt den Multiplikator.
+- **Titel und Sounds** an allen großen Momenten: Meilensteine, neue Dimension, alle bereit, Bonus-Start und -Ende, Sieg mit Feuerwerk, Home-Teleport, Rückkauf.
+- **Border-Optik einstellbar**: `border.curtain-share` (Stärke des durchgehenden Schimmers) und `border.climb-limit` (bis zu welcher Höhe die Linie über Blöcke außerhalb hochzieht). Beides gilt serverweit, auch für Mod-Spieler.
+- **Mod-Update-Hinweis**: Passt der Mod nicht zum Plugin, bekommt der Spieler die Versionen und einen klickbaren Download-Link.
+
+### Geändert
+- Mod-Protokoll 2 (die neuen Optik-Einstellungen werden mitgeschickt). Mod 1.0.x wird höflich abgewiesen und spielt ohne Mod-Funktionen weiter.
+- Das Todes-Protokoll im Server-Log entfällt, Tode werden stattdessen gezählt.
+
 ## [1.7.3] – 2026-09-20
 
 ### Geändert

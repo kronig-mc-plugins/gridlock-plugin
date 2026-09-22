@@ -160,6 +160,7 @@ public final class GameController implements Listener {
         int online = Bukkit.getOnlinePlayers().size();
         if (online > 0 && readyCount() == online) {
             Bukkit.broadcast(Text.prefixed("<green><bold>Alle sind bereit!</bold></green> <gray>Los geht's …"));
+            net.kronig.gridlock.util.Effects.soundAll(Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
             begin();
         }
     }
@@ -263,6 +264,10 @@ public final class GameController implements Listener {
         data.finishInfo = null;
         data.initializedPlayers.clear();
         data.playtime.clear();
+        data.homes.clear();
+        data.lastHomeUse.clear();
+        plugin.stats().reset();
+        plugin.bonus().reset();
 
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         for (Player player : players) {
@@ -348,30 +353,30 @@ public final class GameController implements Listener {
                     Text.mm("<gray>Drache besiegt in <white>" + data.finishInfo),
                     Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(6), Duration.ofSeconds(1))));
             player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_DEATH, 0.4f, 1.2f);
         }
-        Bukkit.broadcast(Text.prefixed("<gold><bold>Challenge geschafft!</bold></gold> <gray>Zeit: <white>" + data.finishInfo
-                + "</white> <dark_gray>|</dark_gray> Feld gesamt: <white>" + plugin.fields().totalSize() + " Blöcke"));
+        net.kronig.gridlock.util.Effects.fireworks(plugin, 12, org.bukkit.Color.fromRGB(255, 59, 59),
+                org.bukkit.Color.fromRGB(255, 158, 59), org.bukkit.Color.fromRGB(255, 215, 0), org.bukkit.Color.WHITE);
+        finish(GameState.WON, "<gold><bold>Challenge geschafft!");
+    }
+
+    /** End-of-round summary in chat, record in stats.json. */
+    private void finish(GameState result, String headline) {
+        plugin.stats().recordRound(result);
+        Bukkit.broadcast(Text.mm("<dark_gray>" + "─".repeat(12) + " " + headline + " <dark_gray>" + "─".repeat(12)));
+        for (String line : plugin.stats().summaryLines()) {
+            Bukkit.broadcast(Text.mm("  " + line));
+        }
+        Bukkit.broadcast(Text.mm("  <gray>Alle Zahlen: <white>/gl stats</white> <dark_gray>·</dark_gray> <gray>Neue Runde: <white>/gl reset"));
+        Bukkit.broadcast(Text.mm("<dark_gray>" + "─".repeat(40)));
         plugin.saveData();
     }
 
-    /** Diagnostics: GridLock never touches death drops. This records what the server did with them. */
     @EventHandler(priority = EventPriority.MONITOR)
-    public void logDeath(PlayerDeathEvent event) {
-        Player dead = event.getPlayer();
-        Location at = dead.getLocation();
-        int stacks = 0;
-        for (org.bukkit.inventory.ItemStack item : dead.getInventory().getContents()) {
-            if (item != null && !item.getType().isAir()) {
-                stacks++;
-            }
+    public void countDeath(PlayerDeathEvent event) {
+        if (data().state.isIngame()) {
+            plugin.stats().countDeath(event.getPlayer().getUniqueId());
         }
-        plugin.getLogger().info("Tod: " + dead.getName() + " in " + at.getWorld().getName() + " bei "
-                + at.getBlockX() + " " + at.getBlockY() + " " + at.getBlockZ()
-                + " | im Feld: " + plugin.fields().isAllowed(at)
-                + " | Inventar-Stacks: " + stacks + " | Drops: " + event.getDrops().size()
-                + " | keepInventory: " + event.getKeepInventory()
-                + " | abgebrochen: " + event.isCancelled()
-                + " | Ursache: " + (dead.getLastDamageCause() != null ? dead.getLastDamageCause().getCause() : "?"));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -391,17 +396,15 @@ public final class GameController implements Listener {
                     Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(6), Duration.ofSeconds(1))));
             player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_DEATH, 0.6f, 0.6f);
         }
-        Bukkit.broadcast(Text.prefixed("<red><bold>Gescheitert!</bold></red> <gray>" + Text.escape(dead.getName())
-                + " ist gestorben. Zeit: <white>" + Text.time(data.timerSeconds)
-                + "</white>. Neue Runde: <white>/gl reset"));
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!player.isDead()) {
                     player.setGameMode(GameMode.SPECTATOR);
                 }
             }
+            Bukkit.broadcast(Text.prefixed("<gray>Ihr seid jetzt Zuschauer. <white>/gl spectate</white> springt zu Spielern."));
         });
-        plugin.saveData();
+        finish(GameState.LOST, "<red><bold>Gescheitert: " + Text.escape(dead.getName()) + " ist gestorben");
     }
 
     @EventHandler

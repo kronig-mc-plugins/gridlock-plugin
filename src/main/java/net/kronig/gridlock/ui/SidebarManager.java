@@ -143,9 +143,15 @@ public final class SidebarManager {
             lines.add("<gray>Deine Zeit: <yellow>" + Text.time(plugin.timer().playtime(player)));
             lines.add("");
             if (plugin.fields().isChallengeWorld(world)) {
-                lines.add("<gray>Welt: <white>" + ExpansionManager.dimensionName(world));
+                int multiplier = plugin.fields().dimensionMultiplier(world);
+                lines.add("<gray>Welt: <white>" + ExpansionManager.dimensionName(world)
+                        + (multiplier > 1 ? " <dark_gray>(×" + multiplier + ")" : ""));
                 lines.add("<gray>Feld: <white>" + plugin.fields().size(world) + " <gray>Blöcke");
                 lines.add("<gray>Nächster: <green>" + plugin.fields().nextCost(world) + " Level");
+            }
+            net.kronig.gridlock.bonus.BonusType bonus = plugin.bonus().active();
+            if (bonus != null) {
+                lines.add("<" + bonus.color() + ">★ " + bonus.displayName() + " <white>" + Text.time(plugin.bonus().remainingSeconds()));
             }
             lines.add("");
             // Own levels per player only make sense outside the shared team pool.

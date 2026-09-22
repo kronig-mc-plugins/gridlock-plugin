@@ -31,7 +31,7 @@ import java.util.UUID;
  * {@code gridlock:field} messages, first byte = type:
  * <pre>
  * 0 RESET    boolean active, int endFreeRadius, int rgb, int glowHeight(1/10), int glowStrength(%), int lineWidth(1/100),
- *            int count, count x (int x, int z)
+ *            int curtainShare(%), int climbLimit(blocks), int count, count x (int x, int z)
  * 1 ADD      int count, count x (int x, int z)
  * 2 REMOVE   int count, count x (int x, int z)
  * 3 PROGRESS float progress 0..1 (someone is buying a block: the border shifts towards green)
@@ -42,7 +42,8 @@ public final class ModLink implements PluginMessageListener {
 
     public static final String HELLO_CHANNEL = "gridlock:hello";
     public static final String FIELD_CHANNEL = "gridlock:field";
-    public static final int PROTOCOL = 1;
+    public static final int PROTOCOL = 2;
+    public static final String MOD_DOWNLOAD = "https://github.com/kronig-mc-plugins/gridlock-mod/releases/latest";
     /** Sent by the mod instead of a protocol version when it has to switch itself off. */
     public static final int SIGN_OFF = -1;
     /** Columns per message, far below the plugin message size limit. */
@@ -86,8 +87,12 @@ public final class ModLink implements PluginMessageListener {
             return;
         }
         if (version != PROTOCOL) {
-            player.sendMessage(Text.prefixed("<yellow>Dein GridLock-Mod passt nicht zu diesem Server (Mod-Protokoll "
-                    + version + ", Server " + PROTOCOL + "). Du spielst ohne Mod-Funktionen, bitte aktualisieren."));
+            String hint = version < PROTOCOL ? "Dein Mod ist zu alt" : "Dein Mod ist neuer als das Server-Plugin";
+            player.sendMessage(Text.prefixed("<yellow>" + hint + " (Mod-Protokoll " + version + ", Server " + PROTOCOL
+                    + "). Du spielst ohne Mod-Funktionen: normale Border, Stopp durch den Server."));
+            player.sendMessage(Text.mm("<gray>Passende Version: <click:open_url:'" + MOD_DOWNLOAD + "'><aqua><underlined>"
+                    + MOD_DOWNLOAD + "</underlined></aqua></click> <dark_gray>(anklicken)"));
+            plugin.getLogger().info(player.getName() + " hat einen GridLock-Mod mit Protokoll " + version + " (Server: " + PROTOCOL + ")");
             return;
         }
         signatures.put(player.getUniqueId(), "");
@@ -154,7 +159,9 @@ public final class ModLink implements PluginMessageListener {
         return world.getUID() + "|" + fields.isRestricted(player) + "|" + freeRadius(world) + "|"
                 + plugin.settings().get(Settings.BORDER_COLOR) + "|" + plugin.settings().integer(Settings.BORDER_GLOW_HEIGHT)
                 + "|" + plugin.settings().integer(Settings.BORDER_GLOW_STRENGTH) + "|"
-                + plugin.settings().integer(Settings.BORDER_LINE_WIDTH);
+                + plugin.settings().integer(Settings.BORDER_LINE_WIDTH) + "|"
+                + plugin.settings().integer(Settings.BORDER_CURTAIN_SHARE) + "|"
+                + plugin.settings().integer(Settings.BORDER_CLIMB_LIMIT);
     }
 
     private int freeRadius(World world) {
@@ -191,6 +198,8 @@ public final class ModLink implements PluginMessageListener {
             out.writeInt(plugin.settings().integer(Settings.BORDER_GLOW_HEIGHT));
             out.writeInt(plugin.settings().integer(Settings.BORDER_GLOW_STRENGTH));
             out.writeInt(plugin.settings().integer(Settings.BORDER_LINE_WIDTH));
+            out.writeInt(plugin.settings().integer(Settings.BORDER_CURTAIN_SHARE));
+            out.writeInt(plugin.settings().integer(Settings.BORDER_CLIMB_LIMIT));
             writeColumns(out, columns, 0, first);
         });
         for (int from = first; from < columns.length; from += CHUNK) {
