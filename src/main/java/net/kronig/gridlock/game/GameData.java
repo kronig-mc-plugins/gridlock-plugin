@@ -42,6 +42,8 @@ public final class GameData {
     public Map<String, Integer> deaths = new HashMap<>();
     public Map<String, Integer> levelsSpent = new HashMap<>();
     public int blocksSold;
+    /** Buyback credit in hundredths of a level (fractions below one level), player UUID or "pool". */
+    public Map<String, Integer> refundCredit = new HashMap<>();
     public long roundStartedEpoch;
 
     // ---- bonus events (times in challenge-timer seconds)

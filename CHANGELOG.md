@@ -2,6 +2,11 @@
 
 Alle wichtigen Änderungen an GridLock. Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach [SemVer](https://semver.org/lang/de/).
 
+## [1.8.2] – 2026-09-22
+
+### Behoben
+- **Rückkauf gab bei billigen Blöcken 0 Level**, weil 25 % von 1 Level abgerundet 0 sind. Bruchteile werden jetzt als Guthaben gesammelt (pro Spieler, im Team-Pool für alle) und ausgezahlt, sobald ein ganzes Level zusammen ist: vier verkaufte 1-Level-Blöcke ergeben ein Level. Menü und Chat zeigen Wert und Guthaben.
+
 ## [1.8.1] – 2026-09-22
 
 ### Hinzugefügt
